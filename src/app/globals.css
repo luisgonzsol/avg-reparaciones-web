@@ -1,0 +1,152 @@
+@import "tailwindcss";
+
+/* =========================================================
+   Tokens de diseño AVG Reparaciones
+   Paleta derivada del logo, usada con sobriedad.
+   ========================================================= */
+@theme {
+  /* Base */
+  --color-canvas: #fafaf7; /* blanco cálido */
+  --color-surface: #ffffff;
+  --color-sand: #f2f1ec; /* superficies secundarias */
+  --color-line: #e4e2da; /* bordes */
+  --color-ink: #161616; /* texto principal (grafito) */
+  --color-ink-soft: #45443f; /* texto secundario — 9:1 sobre canvas */
+  --color-muted: #64625b; /* texto terciario — 5.6:1 sobre canvas */
+  --color-graphite: #1c1c1c; /* secciones oscuras */
+  --color-graphite-soft: #2a2a28;
+
+  /* Marca */
+  --color-brand: #e31e24; /* rojo AVG: acción principal (4.7:1 con blanco) */
+  --color-brand-hover: #c4161c;
+  --color-brand-ink: #b3121a; /* rojo para texto/enlaces sobre fondo claro (6:1) */
+  --color-brand-soft: #fdeceb;
+  --color-bolt: #ffc20e; /* amarillo rayo: solo acentos */
+  --color-flame: #f57c20; /* naranja: solo acentos */
+
+  /* Estados */
+  --color-success: #1b7a43;
+  --color-success-soft: #e6f4ec;
+  --color-warning: #8a5a00;
+  --color-warning-soft: #fff4d6;
+
+  /* Tipografía (variables inyectadas por next/font) */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-jakarta), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  /* Radios y sombras suaves */
+  --radius-card: 1.25rem;
+  --shadow-soft: 0 1px 2px rgb(22 22 22 / 0.04), 0 8px 24px -12px rgb(22 22 22 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(22 22 22 / 0.05), 0 18px 40px -16px rgb(22 22 22 / 0.22);
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* =========================================================
+   Base
+   ========================================================= */
+@layer base {
+  html {
+    /* 17 px en móvil, 18 px desde tablet */
+    font-size: 106.25%;
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+    scroll-padding-top: 6rem; /* compensa el header fijo */
+  }
+  @media (min-width: 768px) {
+    html {
+      font-size: 112.5%;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    word-spacing: 0.06em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Foco visible y claro para navegación por teclado */
+  :focus-visible {
+    outline: 3px solid var(--color-flame);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  ::selection {
+    background: var(--color-bolt);
+    color: var(--color-ink);
+  }
+}
+
+/* =========================================================
+   Utilidades propias
+   ========================================================= */
+
+/* Revelado al hacer scroll — solo CSS (sin JavaScript).
+   Si el navegador no lo soporta o el usuario pide menos movimiento,
+   el contenido se muestra directamente. */
+@utility reveal {
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      animation: reveal-up linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 40%;
+    }
+  }
+}
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Subrayado de acento con el amarillo del rayo */
+@utility accent-underline {
+  background-image: linear-gradient(var(--color-bolt), var(--color-bolt));
+  background-repeat: no-repeat;
+  background-size: 100% 0.28em;
+  background-position: 0 88%;
+  padding-inline: 0.05em;
+}
+
+/* Elimina el marcador por defecto de <summary> */
+@utility summary-clean {
+  list-style: none;
+  &::-webkit-details-marker {
+    display: none;
+  }
+}
+
+/* Contenedor del diálogo del menú móvil */
+dialog.mobile-menu::backdrop {
+  background: rgb(22 22 22 / 0.5);
+  backdrop-filter: blur(2px);
+}
