@@ -6,6 +6,11 @@ import { Logo } from "@/components/brand/logo";
 import { Container, PendingTag } from "@/components/ui/primitives";
 import { IconInstagram, IconMail, IconPhone, IconPin, IconWhatsApp } from "@/components/ui/icons";
 
+const extraLinks = [
+  { href: "/solicitar-reparacion", label: "Solicitar reparación" },
+  { href: "/preguntas-frecuentes", label: "Preguntas frecuentes" },
+];
+
 const legalLinks = [
   { href: "/privacidad", label: "Política de privacidad" },
   { href: "/terminos", label: "Términos y condiciones" },
@@ -63,14 +68,13 @@ export function Footer() {
                   </Link>
                 </li>
               ))}
-              <li>
-                <Link
-                  href="/solicitar-reparacion"
-                  className="inline-flex min-h-10 items-center hover:text-white"
-                >
-                  Solicitar reparación
-                </Link>
-              </li>
+              {extraLinks.map((l) => (
+                <li key={l.href}>
+                  <Link href={l.href} className="inline-flex min-h-10 items-center hover:text-white">
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </nav>
 

@@ -6,20 +6,27 @@ import { Container, PendingTag, Section, SectionHeading } from "@/components/ui/
 import { IconClock, IconInstagram, IconMail, IconPhone, IconPin, IconWhatsApp } from "@/components/ui/icons";
 import { OpenStatus } from "@/components/layout/open-status";
 
-export function Contact() {
+export function Contact({ showHeading = true }: { showHeading?: boolean }) {
   const hours = groupSchedule(siteConfig.schedule);
   const mapSrc = `https://www.google.com/maps?q=${encodeURIComponent(siteConfig.mapQuery)}&output=embed`;
 
   return (
-    <Section id="contacto" aria-labelledby="contacto-title">
+    <Section
+      id={showHeading ? "contacto" : undefined}
+      aria-labelledby={showHeading ? "contacto-title" : undefined}
+      aria-label={showHeading ? undefined : "Datos de contacto y mapa"}
+      className={showHeading ? undefined : "pt-12 sm:pt-16"}
+    >
       <Container>
-        <SectionHeading
-          id="contacto-title"
-          eyebrow="Contacto"
-          title="Visítanos o escríbenos"
-          subtitle="Estamos en el centro de Caracas. Si vienes de lejos, avísanos por WhatsApp y te orientamos."
-        />
-        <div className="mt-10 grid gap-6 lg:grid-cols-[1fr_1.15fr]">
+        {showHeading && (
+          <SectionHeading
+            id="contacto-title"
+            eyebrow="Contacto"
+            title="Visítanos o escríbenos"
+            subtitle="Estamos en el centro de Caracas. Si vienes de lejos, avísanos por WhatsApp y te orientamos."
+          />
+        )}
+        <div className={`${showHeading ? "mt-10" : ""}grid gap-6 lg:grid-cols-[1fr_1.15fr]`}>
           <div className="flex flex-col gap-6 rounded-(--radius-card) bg-surface p-7 shadow-soft ring-1 ring-line sm:p-8">
             <OpenStatus className="self-start" />
 

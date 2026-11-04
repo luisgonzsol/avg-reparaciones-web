@@ -8,7 +8,7 @@ Requisitos completos en `PROMPT.md`, que es la fuente de verdad del encargo. Est
 ## Estado por fases
 
 - [x] **Fase 1** — Base y diseño: setup, tokens, layout, Inicio con datos de ejemplo, cabeceras de seguridad.
-- [ ] **Fase 2** — Páginas informativas y formularios (sin backend).
+- [x] **Fase 2** — Páginas informativas y formularios. Los formularios se validan en el servidor, pero el envío es **simulado**: no se guarda nada y el número de solicitud lleva la marca [SIMULACIÓN]. Las fotos se validan en el navegador y aún no se suben.
 - [ ] **Fase 3** — Supabase, tienda, carrito, checkout con reserva atómica.
 - [ ] **Fase 4** — Panel admin, emails, Storage, rate limiting, Turnstile.
 - [ ] **Fase 5** — SEO, accesibilidad, Lighthouse, E2E, despliegue.
@@ -38,6 +38,15 @@ Al cerrar cada fase: `npm run check` + `npm run build` + `npm audit`, commit, re
   - limitación de frecuencia con una tabla en Postgres, sin Upstash;
   - expiración de pedidos con `pg_cron`;
   - fotos comprimidas en el navegador antes de subirlas (límite de 4,5 MB por petición en Vercel) y validadas de nuevo en el servidor con `sharp`.
+
+## Formularios (Fase 2)
+
+- Los esquemas Zod están en `src/lib/validation/` (`common.ts`: teléfono VE, textos, honeypot; `forms.ts`: reparación por pasos y contacto). Los mismos esquemas validan en el cliente y en el servidor.
+- Las Server Actions están en `src/lib/actions/forms.ts`. **En la Fase 3 hay que sustituir la simulación** por el guardado en Supabase y el número correlativo.
+- Los campos accesibles están en `src/components/forms/fields.tsx`: label, ayuda y error asociados, y `aria-invalid`.
+- Fotos: `src/lib/files.ts` comprueba los magic bytes y el límite de 5 MB. `PhotoPicker` muestra la vista previa en el navegador.
+- Las listas cerradas (estados, tipos de equipo, modalidades de entrega) están en `src/content/forms.ts`.
+- Las cabeceras de seguridad bloquean que la web se cargue dentro de un iframe (`frame-ancestors 'none'`).
 
 ## Estructura
 
