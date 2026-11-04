@@ -6,41 +6,18 @@
  * La prueba de concurrencia real (dos conexiones simultáneas) se ejecuta
  * contra Supabase: tests/integration/concurrency.test.ts
  */
-import { readdirSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import path from "node:path";
-import { PGlite } from "@electric-sql/pglite";
+import type { PGlite } from "@electric-sql/pglite";
+import { asRole as asRoleIn, createTestDb, type Role } from "./setup";
 import { usdToBs } from "@/lib/money";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 const root = process.cwd();
 let db: PGlite;
 
-const SUPABASE_STUBS = `
-  create role anon nologin;
-  create role authenticated nologin;
-  create role service_role nologin bypassrls;
-  grant usage on schema public to anon, authenticated, service_role;
-  create schema auth;
-  grant usage on schema auth to anon, authenticated, service_role;
-  create table auth.users (id uuid primary key);
-  create function auth.uid() returns uuid language sql stable as
-    $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
-  grant execute on function auth.uid() to anon, authenticated, service_role;
-  -- Peor caso: "Automatically expose new tables" ACTIVADO en Supabase
-  -- (concede todo por defecto). Las migraciones deben revocar lo que sobra.
-  -- Con la opción desactivada, los GRANT explícitos de las migraciones bastan.
-  alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
-  alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
-  alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
-`;
-
-async function asRole<T>(role: "anon" | "authenticated" | "service_role", fn: () => Promise<T>): Promise<T> {
-  await db.exec(`set role ${role}`);
-  try {
-    return await fn();
-  } finally {
-    await db.exec("reset role");
-  }
+function asRole<T>(role: Role, fn: () => Promise<T>): Promise<T> {
+  return asRoleIn(db, role, fn);
 }
 
 async function product(slug: string) {
@@ -71,14 +48,7 @@ async function createOrder(items: { slug: string; quantity: number }[], c: objec
 }
 
 beforeAll(async () => {
-  db = new PGlite();
-  await db.exec(SUPABASE_STUBS);
-  const dir = path.join(root, "supabase", "migrations");
-  for (const file of readdirSync(dir).sort()) {
-    if (file.endsWith("_cron.sql")) continue; // pg_cron solo existe en Supabase
-    await db.exec(readFileSync(path.join(dir, file), "utf8"));
-  }
-  await db.exec(readFileSync(path.join(root, "supabase", "seed.sql"), "utf8"));
+  db = await createTestDb();
 }, 60_000);
 
 afterAll(async () => {

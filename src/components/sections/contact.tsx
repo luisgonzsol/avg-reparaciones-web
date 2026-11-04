@@ -1,4 +1,5 @@
-import { fullAddress, siteConfig } from "@/config/site";
+import { fullAddress } from "@/config/site";
+import { getSiteSettings } from "@/lib/settings";
 import { groupSchedule } from "@/lib/schedule";
 import { whatsappUrl, DEFAULT_WHATSAPP_MESSAGE } from "@/lib/whatsapp";
 import { ExternalButton } from "@/components/ui/button";
@@ -6,9 +7,10 @@ import { Container, PendingTag, Section, SectionHeading } from "@/components/ui/
 import { IconClock, IconInstagram, IconMail, IconPhone, IconPin, IconWhatsApp } from "@/components/ui/icons";
 import { OpenStatus } from "@/components/layout/open-status";
 
-export function Contact({ showHeading = true }: { showHeading?: boolean }) {
-  const hours = groupSchedule(siteConfig.schedule);
-  const mapSrc = `https://www.google.com/maps?q=${encodeURIComponent(siteConfig.mapQuery)}&output=embed`;
+export async function Contact({ showHeading = true }: { showHeading?: boolean }) {
+  const cfg = await getSiteSettings();
+  const hours = groupSchedule(cfg.schedule);
+  const mapSrc = `https://www.google.com/maps?q=${encodeURIComponent(cfg.mapQuery)}&output=embed`;
 
   return (
     <Section
@@ -35,7 +37,7 @@ export function Contact({ showHeading = true }: { showHeading?: boolean }) {
                 <IconPin className="mt-0.5 shrink-0 text-brand-ink" />
                 <div>
                   <p className="font-semibold">Dirección</p>
-                  <p className="text-ink-soft">{fullAddress()}</p>
+                  <p className="text-ink-soft">{fullAddress(cfg)}</p>
                 </div>
               </li>
               <li className="flex gap-4">
@@ -57,10 +59,10 @@ export function Contact({ showHeading = true }: { showHeading?: boolean }) {
                 <div>
                   <p className="font-semibold">Teléfono y WhatsApp</p>
                   <a
-                    href={`tel:${siteConfig.phoneE164}`}
+                    href={`tel:${cfg.phoneE164}`}
                     className="text-ink-soft underline-offset-4 hover:text-ink hover:underline"
                   >
-                    {siteConfig.phoneDisplay}
+                    {cfg.phoneDisplay}
                   </a>
                 </div>
               </li>
@@ -68,9 +70,9 @@ export function Contact({ showHeading = true }: { showHeading?: boolean }) {
                 <IconMail className="mt-0.5 shrink-0 text-brand-ink" />
                 <div>
                   <p className="font-semibold">Correo</p>
-                  {siteConfig.email ? (
-                    <a href={`mailto:${siteConfig.email}`} className="text-ink-soft hover:text-ink">
-                      {siteConfig.email}
+                  {cfg.email ? (
+                    <a href={`mailto:${cfg.email}`} className="text-ink-soft hover:text-ink">
+                      {cfg.email}
                     </a>
                   ) : (
                     <PendingTag />
@@ -82,12 +84,12 @@ export function Contact({ showHeading = true }: { showHeading?: boolean }) {
                 <div>
                   <p className="font-semibold">Instagram</p>
                   <a
-                    href={siteConfig.instagram}
+                    href={cfg.instagram}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-ink-soft underline-offset-4 hover:text-ink hover:underline"
                   >
-                    {siteConfig.instagramHandle}
+                    {cfg.instagramHandle}
                     <span className="sr-only"> (se abre en una pestaña nueva)</span>
                   </a>
                 </div>
@@ -95,7 +97,7 @@ export function Contact({ showHeading = true }: { showHeading?: boolean }) {
             </ul>
 
             <ExternalButton
-              href={whatsappUrl(DEFAULT_WHATSAPP_MESSAGE)}
+              href={whatsappUrl(DEFAULT_WHATSAPP_MESSAGE, cfg.whatsappNumber)}
               variant="whatsapp"
               size="lg"
               className="mt-auto"
@@ -116,7 +118,7 @@ export function Contact({ showHeading = true }: { showHeading?: boolean }) {
             />
           </div>
         </div>
-        {!siteConfig.address.secondStreet && (
+        {!cfg.address.secondStreet && (
           <p className="mt-4 text-sm text-muted">
             <PendingTag /> Falta verificar la segunda calle de la dirección y la ubicación exacta del mapa.
           </p>

@@ -1,11 +1,12 @@
 import clsx from "clsx";
+import { getSiteSettings } from "@/lib/settings";
 import { getFaq } from "@/content/faq";
 import { Container, Section, SectionHeading } from "@/components/ui/primitives";
 import { IconChevronDown } from "@/components/ui/icons";
 
 /** FAQ con <details>/<summary> nativos: accesible y sin JavaScript. */
-export function Faq({ showHeading = true }: { showHeading?: boolean }) {
-  const items = getFaq();
+export async function Faq({ showHeading = true }: { showHeading?: boolean }) {
+  const items = getFaq(await getSiteSettings());
   return (
     <Section
       id={showHeading ? "preguntas-frecuentes" : undefined}

@@ -1,7 +1,8 @@
 /**
  * Valores por defecto de los datos del negocio.
- * En la Fase 3 estos datos pasarán a la tabla `settings` (editable desde el
- * panel); este archivo seguirá siendo el respaldo si la base de datos falla.
+ * Los datos editables (contacto, horario, garantía, costes, expiración…) se
+ * leen de la tabla `settings` (panel → Ajustes) con `getSiteSettings()`;
+ * este archivo es el respaldo si la base de datos no responde.
  *
  * Convención: `null` = dato [PENDIENTE] del cliente. La interfaz lo muestra
  * con la etiqueta visible "[PENDIENTE]".
@@ -10,7 +11,43 @@ import type { WeeklySchedule } from "@/lib/schedule";
 
 export const PENDING = "[PENDIENTE]";
 
-export const siteConfig = {
+type Address = {
+  street: string;
+  between: string;
+  secondStreet: string | null;
+  city: string;
+  postalCode: string;
+  region: string;
+  country: string;
+  countryCode: string;
+};
+
+export type SiteConfig = {
+  legalName: string;
+  shortName: string;
+  rif: string;
+  url: string;
+  timeZone: string;
+  locale: string;
+  phoneDisplay: string;
+  phoneE164: string;
+  whatsappNumber: string;
+  email: string | null;
+  instagram: string;
+  instagramHandle: string;
+  address: Address;
+  geo: { lat: number; lng: number } | null;
+  mapQuery: string;
+  schedule: WeeklySchedule;
+  warrantyDuration: string | null;
+  pickupCostNote: string | null;
+  returnShippingCostNote: string | null;
+  orderExpirationHours: number;
+  paymentMethods: string[];
+  showTestimonials: boolean;
+};
+
+export const siteConfig: SiteConfig = {
   legalName: "AVG Reparaciones C.A.",
   shortName: "AVG Reparaciones",
   rif: "J-504740098",
@@ -21,14 +58,14 @@ export const siteConfig = {
   phoneDisplay: "+58 412-7408970",
   phoneE164: "+584127408970",
   whatsappNumber: "584127408970",
-  email: null as string | null, // [PENDIENTE] cuenta Gmail
+  email: null, // [PENDIENTE] cuenta Gmail
   instagram: "https://www.instagram.com/avgreparaciones/",
   instagramHandle: "@avgreparaciones",
 
   address: {
     street: "Av. Este 12",
     between: "entre El Hoyo y", // + segunda calle [PENDIENTE]
-    secondStreet: null as string | null,
+    secondStreet: null,
     city: "Caracas",
     postalCode: "1012",
     region: "Distrito Capital",
@@ -36,7 +73,7 @@ export const siteConfig = {
     countryCode: "VE",
   },
   /** Coordenadas del local [PENDIENTE]: necesarias para JSON-LD. */
-  geo: null as { lat: number; lng: number } | null,
+  geo: null,
   /** Consulta para el mapa embebido mientras no haya coordenadas exactas. */
   mapQuery: "AVG Reparaciones, Av. Este 12, Caracas",
 
@@ -49,23 +86,21 @@ export const siteConfig = {
     4: { open: "08:00", close: "17:00" },
     5: { open: "08:00", close: "17:00" },
     6: { open: "08:00", close: "14:00" },
-  } satisfies WeeklySchedule,
+  },
 
   /** Duración de la garantía de reparaciones [PENDIENTE]. */
-  warrantyDuration: null as string | null,
+  warrantyDuration: null,
   /** Costes orientativos [PENDIENTE]. */
-  pickupCostNote: null as string | null,
-  returnShippingCostNote: null as string | null,
+  pickupCostNote: null,
+  returnShippingCostNote: null,
   /** Horas hasta que caduca un pedido sin pagar. */
   orderExpirationHours: 48,
   /** Métodos de pago aceptados [PENDIENTE de confirmar la lista completa]. */
-  paymentMethods: ["Pago Móvil"] as string[],
+  paymentMethods: ["Pago Móvil"],
 
   /** Mostrar la sección de testimonios (solo cuando haya reseñas reales). */
   showTestimonials: false,
-} as const;
-
-export type SiteConfig = typeof siteConfig;
+};
 
 export function fullAddress(cfg: SiteConfig = siteConfig): string {
   const a = cfg.address;

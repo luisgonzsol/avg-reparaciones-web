@@ -4,7 +4,7 @@ import { ButtonLink } from "@/components/ui/button";
 import { Container } from "@/components/ui/primitives";
 import { IconArrowRight, IconShield } from "@/components/ui/icons";
 import { SwooshBackdrop } from "@/components/brand/decor";
-import localPhoto from "../../../public/images/local-avg-mostrador.jpg";
+import localPhoto from "@/../public/images/local-avg-mostrador.jpg";
 
 export function Hero() {
   return (

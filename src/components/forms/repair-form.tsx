@@ -27,6 +27,8 @@ import {
 } from "./fields";
 import { PhotoPicker, type PickedPhoto } from "./photo-picker";
 import { focusFirstError, formValues, omitKey, validateWith } from "./form-helpers";
+import { Turnstile, type TurnstileHandle } from "./turnstile";
+import { compressImage, MAX_UPLOAD_BYTES } from "@/lib/images/compress";
 
 const FIELD_ORDER = [
   "equipmentType",
@@ -50,12 +52,15 @@ type Success = Extract<RepairActionState, { status: "success" }>;
 export function RepairForm({
   pickupNote,
   returnNote,
+  whatsappNumber,
 }: {
   pickupNote: string | null;
   returnNote: string | null;
+  whatsappNumber?: string;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const turnstile = useRef<TurnstileHandle>(null);
   const [step, setStep] = useState(0);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string>();
@@ -98,9 +103,18 @@ export function RepairForm({
 
     const form = e.currentTarget;
     const data = new FormData(form);
-    // Fase 2: las fotos se validan pero aún no se suben (Storage llega en la Fase 4).
     startTransition(async () => {
       try {
+        // Fotos: se comprimen en el navegador (y pierden el EXIF) antes de subirlas.
+        const compressed = await Promise.all(photos.map((p) => compressImage(p.file)));
+        const total = compressed.reduce((sum, f) => sum + f.size, 0);
+        if (total > MAX_UPLOAD_BYTES) {
+          setFormError("Las fotos pesan demasiado juntas. Quita alguna o elige fotos más livianas.");
+          return;
+        }
+        data.delete("photos");
+        for (const file of compressed) data.append("photos", file);
+
         const result = await submitRepairRequest({ status: "idle" }, data);
         if (result.status === "success") {
           setSuccess(result);
@@ -109,6 +123,7 @@ export function RepairForm({
             headingRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
           });
         } else if (result.status === "error") {
+          turnstile.current?.reset();
           setErrors(result.fieldErrors);
           setFormError(result.message);
           const badStep = STEP_FIELDS.findIndex((fields) => fields.some((f) => result.fieldErrors[f]));
@@ -186,10 +201,10 @@ export function RepairForm({
 
         <p className="mt-8 text-ink-soft">
           <strong className="text-ink">¿Quieres ir más rápido?</strong> Envíanos el resumen por WhatsApp y, si
-          tienes fotos del equipo, adjúntalas en el chat.
+          tienes más fotos o videos del equipo, adjúntalos en el chat.
         </p>
         <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-          <ExternalButton href={whatsappUrl(message)} variant="whatsapp" size="lg">
+          <ExternalButton href={whatsappUrl(message, whatsappNumber)} variant="whatsapp" size="lg">
             <IconWhatsApp size={22} />
             Enviar resumen por WhatsApp
           </ExternalButton>
@@ -391,6 +406,7 @@ export function RepairForm({
           </a>
           .
         </CheckboxField>
+        {last && <Turnstile ref={turnstile} action="repair" />}
       </fieldset>
 
       <div className="mt-10 flex flex-col-reverse gap-3 border-t border-line pt-6 sm:flex-row sm:justify-between">

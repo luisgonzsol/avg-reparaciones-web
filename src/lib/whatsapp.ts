@@ -54,3 +54,19 @@ export function orderMessage(o: OrderSummary): string {
     "Quedo atento/a al enlace de cobro.",
   ].join("\n");
 }
+
+/** Mensaje del panel al cliente con el enlace de cobro (se abre en WhatsApp del admin). */
+export function paymentLinkMessage(p: {
+  firstName: string;
+  orderNumber: string;
+  totalUsd: string;
+  totalBs: string;
+  link: string;
+}): string {
+  return [
+    `¡Hola, ${p.firstName}! Te escribimos de AVG Reparaciones por tu pedido ${p.orderNumber}.`,
+    `Total: ${p.totalUsd} (ref. ${p.totalBs})`,
+    `Puedes pagarlo aquí: ${p.link}`,
+    "Cualquier duda, responde a este mensaje. ¡Gracias!",
+  ].join("\n");
+}

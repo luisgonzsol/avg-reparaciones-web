@@ -1,18 +1,7 @@
 import "server-only";
 import { getServiceClient } from "@/lib/supabase/server";
 import { maskIdDoc } from "@/lib/validation/common";
-
-export const ORDER_STATUS_LABEL: Record<string, string> = {
-  pending_payment: "Pendiente de pago",
-  link_sent: "Enlace de cobro enviado",
-  paid: "Pagado",
-  preparing: "En preparación",
-  shipped: "Enviado",
-  ready_for_pickup: "Listo para retirar",
-  delivered: "Entregado",
-  cancelled: "Cancelado",
-  expired: "Cancelado (expirado)",
-};
+import { ORDER_STATUS_LABEL, isOrderStatus } from "@/lib/status";
 
 export type PublicOrder = {
   orderNumber: string;
@@ -63,7 +52,7 @@ export async function getOrderByToken(token: string): Promise<PublicOrder | null
   return {
     orderNumber: data.order_number,
     status: data.status,
-    statusLabel: ORDER_STATUS_LABEL[data.status] ?? data.status,
+    statusLabel: isOrderStatus(data.status) ? ORDER_STATUS_LABEL[data.status] : String(data.status),
     customerFirstName: String(data.customer_name).split(" ")[0] ?? "",
     idDocMasked: maskIdDoc(data.customer_id_doc),
     deliveryMethod: data.delivery_method,

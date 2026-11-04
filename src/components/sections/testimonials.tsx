@@ -1,13 +1,14 @@
-import { siteConfig } from "@/config/site";
+import { getSiteSettings } from "@/lib/settings";
 import { testimonials } from "@/content/home";
 import { Container, Section, SectionHeading } from "@/components/ui/primitives";
 
 /**
- * Testimonios. OCULTOS mientras `siteConfig.showTestimonials` sea false:
+ * Testimonios. OCULTOS mientras `cfg.showTestimonials` sea false:
  * los datos actuales son [PLACEHOLDER] y no deben publicarse.
  */
-export function Testimonials() {
-  if (!siteConfig.showTestimonials) return null;
+export async function Testimonials() {
+  const cfg = await getSiteSettings();
+  if (!cfg.showTestimonials) return null;
 
   return (
     <Section aria-labelledby="testimonios-title">

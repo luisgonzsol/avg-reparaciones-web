@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getSiteSettings } from "@/lib/settings";
 import { navLinks } from "@/config/site";
 import { getCurrency } from "@/lib/currency";
 import { whatsappUrl, DEFAULT_WHATSAPP_MESSAGE } from "@/lib/whatsapp";
@@ -11,8 +12,9 @@ import { CartButton } from "./cart-button";
 import { MobileMenu } from "./mobile-menu";
 
 export async function Header() {
+  const cfg = await getSiteSettings();
   const currency = await getCurrency();
-  const wa = whatsappUrl(DEFAULT_WHATSAPP_MESSAGE);
+  const wa = whatsappUrl(DEFAULT_WHATSAPP_MESSAGE, cfg.whatsappNumber);
 
   return (
     <header className="sticky top-0 z-40 border-b border-line/70 bg-canvas/90 backdrop-blur-md supports-[backdrop-filter]:bg-canvas/75">

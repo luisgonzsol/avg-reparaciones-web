@@ -31,6 +31,13 @@ const supabaseHost = (() => {
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  experimental: {
+    serverActions: {
+      // Fotos de solicitudes e imágenes de productos (ya comprimidas en el
+      // navegador). Por debajo del límite de 4,5 MB por petición de Vercel.
+      bodySizeLimit: "4mb",
+    },
+  },
   reactStrictMode: true,
   images: {
     formats: ["image/avif", "image/webp"],

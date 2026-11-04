@@ -10,7 +10,8 @@ export type PickedPhoto = { id: string; file: File; url: string };
 
 /**
  * Selector de hasta 3 fotos. Valida tipo REAL (magic bytes) y tamaño en el
- * navegador; el servidor lo vuelve a validar todo (Fase 4).
+ * navegador; al enviar se comprimen (sin EXIF) y el servidor lo vuelve a
+ * validar y re-codificar todo.
  */
 export function PhotoPicker({
   photos,
@@ -73,7 +74,7 @@ export function PhotoPicker({
             key={p.id}
             className="relative aspect-square overflow-hidden rounded-xl bg-sand ring-1 ring-line"
           >
-            {/* Vista previa local (blob:), no se sube a ningún sitio todavía. */}
+            {/* Vista previa local (blob:): se sube solo al enviar la solicitud. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={p.url} alt={`Foto ${i + 1} seleccionada`} className="size-full object-cover" />
             <button

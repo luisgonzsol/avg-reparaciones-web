@@ -2,9 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import { siteConfig } from "@/config/site";
-import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/layout/footer";
-import { WhatsAppFab } from "@/components/layout/whatsapp-fab";
 import "./globals.css";
 
 // Fuentes autoalojadas por next/font (se descargan en el build, sin
@@ -48,20 +45,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
 
   return (
     <html lang="es-VE" className={`${inter.variable} ${jakarta.variable} antialiased`}>
-      <body className="flex min-h-dvh flex-col">
-        <a
-          href="#contenido"
-          className="sr-only z-50 rounded-full bg-ink px-5 py-3 font-semibold text-white focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
-        >
-          Saltar al contenido
-        </a>
-        <Header />
-        <main id="contenido" className="flex-1">
-          {children}
-        </main>
-        <Footer />
-        <WhatsAppFab />
-      </body>
+      <body className="flex min-h-dvh flex-col">{children}</body>
     </html>
   );
 }

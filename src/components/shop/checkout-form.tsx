@@ -22,6 +22,7 @@ import {
 } from "@/components/forms/fields";
 import { focusFirstError, formValues, omitKey, validateWith } from "@/components/forms/form-helpers";
 import { RateNoticeClient } from "./rate-notice-client";
+import { Turnstile, type TurnstileHandle } from "@/components/forms/turnstile";
 import { useCartQuote } from "./use-cart-quote";
 
 const ORDER = [
@@ -41,6 +42,7 @@ const ORDER = [
 export function CheckoutForm() {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
+  const turnstile = useRef<TurnstileHandle>(null);
   const { lines, quoted, loading, rate, totalUsd, totalBs, hasIssues, orderLines, refresh } = useCartQuote();
   const [delivery, setDelivery] = useState<OrderDelivery | "">("");
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -86,6 +88,7 @@ export function CheckoutForm() {
           router.push(`/pedido/${result.token}`);
           return;
         }
+        turnstile.current?.reset();
         setFormError(result.message);
         if (result.fieldErrors) {
           setErrors(result.fieldErrors);
@@ -257,6 +260,7 @@ export function CheckoutForm() {
             </a>
             .
           </CheckboxField>
+          <Turnstile ref={turnstile} action="checkout" />
           <button
             type="submit"
             className={buttonClasses("primary", "lg", "w-full sm:w-auto sm:justify-self-start")}

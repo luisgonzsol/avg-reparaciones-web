@@ -1,10 +1,12 @@
 import { coverage } from "@/content/home";
+import { getSiteSettings } from "@/lib/settings";
 import { whatsappUrl } from "@/lib/whatsapp";
 import { ExternalButton } from "@/components/ui/button";
 import { Container } from "@/components/ui/primitives";
 import { IconTruck, IconWhatsApp } from "@/components/ui/icons";
 
-export function Coverage() {
+export async function Coverage() {
+  const cfg = await getSiteSettings();
   return (
     <section aria-labelledby="cobertura-title" className="py-16 sm:py-20">
       <Container>
@@ -25,7 +27,11 @@ export function Coverage() {
               </h2>
               <p className="mt-4 max-w-2xl text-lg text-white/90">{coverage.body}</p>
             </div>
-            <ExternalButton href={whatsappUrl(coverage.cta.message)} variant="inverse" size="lg">
+            <ExternalButton
+              href={whatsappUrl(coverage.cta.message, cfg.whatsappNumber)}
+              variant="inverse"
+              size="lg"
+            >
               <IconWhatsApp size={22} className="text-[#1f8f4e]" />
               {coverage.cta.label}
             </ExternalButton>

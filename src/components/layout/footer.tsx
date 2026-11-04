@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { fullAddress, navLinks, siteConfig } from "@/config/site";
+import { getSiteSettings } from "@/lib/settings";
+import { fullAddress, navLinks } from "@/config/site";
 import { groupSchedule } from "@/lib/schedule";
 import { whatsappUrl } from "@/lib/whatsapp";
 import { Logo } from "@/components/brand/logo";
@@ -16,9 +17,10 @@ const legalLinks = [
   { href: "/terminos", label: "Términos y condiciones" },
 ];
 
-export function Footer() {
+export async function Footer() {
+  const cfg = await getSiteSettings();
   const year = new Date().getFullYear();
-  const hours = groupSchedule(siteConfig.schedule);
+  const hours = groupSchedule(cfg.schedule);
 
   return (
     // pb extra en móvil: deja sitio al botón flotante de WhatsApp.
@@ -33,7 +35,7 @@ export function Footer() {
             </p>
             <div className="mt-6 flex gap-2">
               <a
-                href={siteConfig.instagram}
+                href={cfg.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="grid size-12 place-items-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
@@ -42,7 +44,7 @@ export function Footer() {
                 <span className="sr-only">Instagram de AVG Reparaciones (se abre en una pestaña nueva)</span>
               </a>
               <a
-                href={whatsappUrl()}
+                href={whatsappUrl(undefined, cfg.whatsappNumber)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="grid size-12 place-items-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
@@ -95,22 +97,22 @@ export function Footer() {
             <ul className="mt-4 space-y-3 text-[0.95rem]">
               <li className="flex gap-3">
                 <IconPin className="mt-0.5 shrink-0 text-bolt" size={20} />
-                <span>{fullAddress()}</span>
+                <span>{fullAddress(cfg)}</span>
               </li>
               <li>
                 <a
-                  href={`tel:${siteConfig.phoneE164}`}
+                  href={`tel:${cfg.phoneE164}`}
                   className="flex min-h-10 items-center gap-3 hover:text-white"
                 >
                   <IconPhone className="shrink-0 text-bolt" size={20} />
-                  {siteConfig.phoneDisplay}
+                  {cfg.phoneDisplay}
                 </a>
               </li>
               <li className="flex items-center gap-3">
                 <IconMail className="shrink-0 text-bolt" size={20} />
-                {siteConfig.email ? (
-                  <a href={`mailto:${siteConfig.email}`} className="hover:text-white">
-                    {siteConfig.email}
+                {cfg.email ? (
+                  <a href={`mailto:${cfg.email}`} className="hover:text-white">
+                    {cfg.email}
                   </a>
                 ) : (
                   <span>
@@ -124,7 +126,7 @@ export function Footer() {
 
         <div className="mt-14 flex flex-col gap-4 border-t border-white/10 pt-8 text-sm text-white/60 md:flex-row md:items-center md:justify-between">
           <p>
-            © {year} {siteConfig.legalName} · RIF {siteConfig.rif}
+            © {year} {cfg.legalName} · RIF {cfg.rif}
           </p>
           <ul className="flex flex-wrap gap-x-6 gap-y-1">
             {legalLinks.map((l) => (

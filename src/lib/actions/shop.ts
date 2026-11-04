@@ -4,12 +4,15 @@
  * Los precios y el stock SIEMPRE se calculan en el servidor a partir de la
  * base de datos; nunca se confía en lo que envía el navegador.
  */
+import { after } from "next/server";
 import { z } from "zod";
 import { getCurrentRate, getProductsBySlugs } from "@/lib/data/catalog";
 import { getServiceClient, SupabaseNotConfiguredError } from "@/lib/supabase/server";
 import { cartLinesSchema, checkoutSchema } from "@/lib/validation/forms";
 import { toFieldErrors, type FieldErrors } from "@/lib/validation/common";
 import { checkRateLimit } from "@/lib/security/rate-limit";
+import { TURNSTILE_ERROR, verifyTurnstile } from "@/lib/security/turnstile";
+import { notifyNewOrder } from "@/lib/email/notify";
 import type { CatalogProduct, ExchangeRate } from "@/lib/catalog";
 
 /* ---------- Refrescar el carrito ---------- */
@@ -74,7 +77,8 @@ export async function placeOrder(formData: FormData, cartJson: string): Promise<
     return { status: "error", message: GENERIC };
   }
 
-  // 2. Limitación de frecuencia
+  // 2. Antispam y limitación de frecuencia
+  if (!(await verifyTurnstile(formData))) return { status: "error", message: TURNSTILE_ERROR };
   if (!(await checkRateLimit("checkout"))) {
     return {
       status: "error",
@@ -131,7 +135,9 @@ export async function placeOrder(formData: FormData, cartJson: string): Promise<
     const row = Array.isArray(rows) ? rows[0] : rows;
     if (!row?.public_token) return { status: "error", message: GENERIC };
 
-    // Fase 4: enviar email de confirmación al cliente y aviso a la empresa.
+    // Confirmación al cliente y aviso a la empresa, después de responder.
+    const orderId = row.order_id as string;
+    after(() => notifyNewOrder(orderId));
     return { status: "success", token: row.public_token as string };
   } catch (e) {
     if (e instanceof SupabaseNotConfiguredError) {

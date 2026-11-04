@@ -3,7 +3,7 @@ import { aboutSummary } from "@/content/home";
 import { ButtonLink } from "@/components/ui/button";
 import { Container, Section, SectionHeading } from "@/components/ui/primitives";
 import { BoltDivider } from "@/components/brand/decor";
-import fachada from "../../../public/images/local-avg-fachada.jpg";
+import fachada from "@/../public/images/local-avg-fachada.jpg";
 
 export function AboutSummary() {
   return (

@@ -1,6 +1,6 @@
 import { connection } from "next/server";
+import { getSiteSettings } from "@/lib/settings";
 import clsx from "clsx";
-import { siteConfig } from "@/config/site";
 import { describeStatus, getOpenStatus, zonedNow } from "@/lib/schedule";
 
 /**
@@ -15,9 +15,10 @@ export async function OpenStatus({
   className?: string;
 }) {
   await connection(); // fuerza el cálculo en cada petición
+  const cfg = await getSiteSettings();
   const now = new Date();
-  const status = getOpenStatus(siteConfig.schedule, now, siteConfig.timeZone);
-  const { day } = zonedNow(now, siteConfig.timeZone);
+  const status = getOpenStatus(cfg.schedule, now, cfg.timeZone);
+  const { day } = zonedNow(now, cfg.timeZone);
   const text = describeStatus(status, day);
 
   return (

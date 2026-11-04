@@ -3,30 +3,14 @@
  * Supabase (sin privilegios por defecto). Comprueba que los GRANT explícitos
  * de las migraciones bastan para que la web funcione.
  */
-import { readdirSync, readFileSync } from "node:fs";
-import path from "node:path";
-import { PGlite } from "@electric-sql/pglite";
+import type { PGlite } from "@electric-sql/pglite";
+import { createTestDb } from "./setup";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 let db: PGlite;
 
 beforeAll(async () => {
-  db = new PGlite();
-  await db.exec(`
-    create role anon nologin;
-    create role authenticated nologin;
-    create role service_role nologin bypassrls;
-    create schema auth;
-    grant usage on schema auth to anon, authenticated, service_role;
-    create table auth.users (id uuid primary key);
-    create function auth.uid() returns uuid language sql stable as $$ select null::uuid $$;
-    grant execute on function auth.uid() to anon, authenticated, service_role;
-  `);
-  const dir = path.join(process.cwd(), "supabase", "migrations");
-  for (const f of readdirSync(dir).sort()) {
-    if (!f.endsWith("_cron.sql")) await db.exec(readFileSync(path.join(dir, f), "utf8"));
-  }
-  await db.exec(readFileSync(path.join(process.cwd(), "supabase", "seed.sql"), "utf8"));
+  db = await createTestDb({ autoExpose: false });
 }, 60_000);
 
 afterAll(async () => {

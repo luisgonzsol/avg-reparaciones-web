@@ -10,11 +10,13 @@ import { PendingTag } from "@/components/ui/primitives";
 import { IconShield } from "@/components/ui/icons";
 import { CheckboxField, FormAlert, Honeypot, SelectField, TextAreaField, TextField } from "./fields";
 import { focusFirstError, formValues, omitKey, validateWith } from "./form-helpers";
+import { Turnstile, type TurnstileHandle } from "./turnstile";
 
 const ORDER = ["name", "phone", "email", "topic", "message", "privacy"];
 
 export function ContactForm() {
   const formRef = useRef<HTMLFormElement>(null);
+  const turnstile = useRef<TurnstileHandle>(null);
   const doneRef = useRef<HTMLHeadingElement>(null);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string>();
@@ -39,6 +41,7 @@ export function ContactForm() {
           setDone({ simulated: result.simulated });
           requestAnimationFrame(() => doneRef.current?.focus());
         } else if (result.status === "error") {
+          turnstile.current?.reset();
           setErrors(result.fieldErrors);
           setFormError(result.message);
           requestAnimationFrame(() => focusFirstError(formRef.current, result.fieldErrors, ORDER));
@@ -133,6 +136,7 @@ export function ContactForm() {
         </a>
         .
       </CheckboxField>
+      <Turnstile ref={turnstile} action="contact" />
       <button
         type="submit"
         className={buttonClasses("primary", "lg", "sm:justify-self-start")}

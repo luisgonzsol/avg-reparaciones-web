@@ -1,9 +1,11 @@
 import { whatsappUrl } from "@/lib/whatsapp";
+import { getSiteSettings } from "@/lib/settings";
 import { ExternalButton } from "@/components/ui/button";
 import { IconWhatsApp } from "@/components/ui/icons";
 
 /** Se muestra si la base de datos no responde o aún no está configurada. */
-export function StoreUnavailable() {
+export async function StoreUnavailable() {
+  const cfg = await getSiteSettings();
   return (
     <div
       role="status"
@@ -15,7 +17,7 @@ export function StoreUnavailable() {
         repuesto que buscas.
       </p>
       <ExternalButton
-        href={whatsappUrl("¡Hola, AVG Reparaciones! Estoy buscando un repuesto.")}
+        href={whatsappUrl("¡Hola, AVG Reparaciones! Estoy buscando un repuesto.", cfg.whatsappNumber)}
         variant="whatsapp"
         size="lg"
         className="mt-6"

@@ -10,7 +10,7 @@ Requisitos completos en `PROMPT.md`, que es la fuente de verdad del encargo. Est
 - [x] **Fase 1** — Base y diseño: setup, tokens, layout, Inicio con datos de ejemplo, cabeceras de seguridad.
 - [x] **Fase 2** — Páginas informativas y formularios. Los formularios se validan en el servidor, pero el envío es **simulado**: no se guarda nada y el número de solicitud lleva la marca [SIMULACIÓN]. Las fotos se validan en el navegador y aún no se suben.
 - [x] **Fase 3** — Supabase (proyecto real conectado), tienda, carrito, checkout con reserva atómica, expiración con pg_cron, formularios guardando en la BD.
-- [ ] **Fase 4** — Panel admin, emails, Storage, rate limiting, Turnstile.
+- [x] **Fase 4** — Panel admin con MFA, auditoría, ajustes desde la BD, emails (Resend), Storage, rate limiting, Turnstile.
 - [ ] **Fase 5** — SEO, accesibilidad, Lighthouse, E2E, despliegue.
 
 Al cerrar cada fase: `npm run check` + `npm run build` + `npm audit`, commit, resumen al usuario y lista [PENDIENTE]. Luego se espera su confirmación.
@@ -23,7 +23,7 @@ Al cerrar cada fase: `npm run check` + `npm run build` + `npm audit`, commit, re
   - `LayoutProps` / `PageProps` son tipos globales generados por `next typegen`.
 - **Tailwind CSS v4**, cargado con `@tailwindcss/turbopack` (configurado en `next.config.ts`; no hay postcss.config). Los tokens están en `@theme` dentro de `src/app/globals.css`.
 - Zod, clsx. Vitest (lógica y BD con PGlite) y Playwright (E2E, escritorio y móvil).
-- Supabase, Resend y Turnstile llegan en las Fases 3 y 4.
+- Supabase (`@supabase/ssr` para la sesión del panel), Resend + `@react-email/render` (no `@react-email/components`: arrastra una dependencia vulnerable), Cloudflare Turnstile, `sharp`.
 - npm como gestor de paquetes. Node ≥ 20.9 (el desarrollo se hace con Node 26).
 
 ## Decisiones de arquitectura
@@ -34,10 +34,8 @@ Al cerrar cada fase: `npm run check` + `npm run build` + `npm audit`, commit, re
 - **Horario abierto/cerrado:** se calcula en el servidor con `America/Caracas` (`src/lib/schedule.ts`) y nunca con el reloj del cliente.
 - **Carrito:** `localStorage` con try/catch y solo guarda `{slug, quantity}` (`src/lib/cart/store.ts`). Precios y stock se revalidan siempre en el servidor.
 - **WhatsApp:** usar siempre `whatsappUrl()` de `src/lib/whatsapp.ts`, que codifica el texto con `encodeURIComponent`.
-- Planificado para la Fase 3:
-  - limitación de frecuencia con una tabla en Postgres, sin Upstash;
-  - expiración de pedidos con `pg_cron`;
-  - fotos comprimidas en el navegador antes de subirlas (límite de 4,5 MB por petición en Vercel) y validadas de nuevo en el servidor con `sharp`.
+- **Route groups:** las páginas públicas están en `src/app/(site)/` (su layout pone header/footer con `SiteChrome`); el panel en `src/app/admin/`. El layout raíz solo tiene `<body>`.
+- **Imágenes subidas:** se comprimen en el navegador (`src/lib/images/compress.ts`, canvas, quita EXIF, < 3,8 MB por la cuota de 4,5 MB de Vercel) y en el servidor (`src/lib/images/server.ts`) se comprueban los magic bytes y se re-codifican con `sharp` (sin metadatos, nombre UUID). `serverActions.bodySizeLimit = "4mb"`.
 
 ## Base de datos y tienda (Fase 3)
 
@@ -65,11 +63,21 @@ Al cerrar cada fase: `npm run check` + `npm run build` + `npm audit`, commit, re
   - Inicio oculta los destacados;
   - los formularios simulan el envío.
 - **Rate limiting:** `src/lib/security/rate-limit.ts` usa la tabla `rate_limits` con el hash de la IP más una sal. Si la base de datos falla, deja pasar la petición (fail-open).
-- **Pendiente para la Fase 4:**
-  - la tabla `settings` existe, pero la web aún lee `src/config/site.ts`;
-  - emails;
-  - escritura desde el panel y auditoría;
-  - bucket de Storage y subida de fotos.
+
+## Panel, ajustes, emails y antispam (Fase 4)
+
+- **Migraciones:** `_admin` (permisos de escritura por columna para `authenticated`, políticas de admin, auditoría por trigger, RPC del panel) y `_storage` (solo Supabase: buckets `products` público y `repair-photos` privado).
+- **Acceso:** no hay registro. El usuario se crea en Supabase Auth y se le da acceso con `node scripts/make-admin.mjs email [owner|staff|--remove]`. `is_admin()` exige `aal2` si el usuario tiene un factor TOTP verificado.
+- **Sesión:** `@supabase/ssr` con cookies httpOnly (`src/lib/supabase/auth.ts`). `src/proxy.ts` refresca la sesión, añade `noindex` + `no-store` y redirige a `/admin/login` sin sesión. Cada página llama a `requireAdmin()` (`src/lib/admin/session.ts`) y cada acción vuelve a comprobarlo: el proxy no es la única barrera.
+- **Escrituras del panel:** con el cliente del usuario (RLS + grants por columna), nunca con la service key. `reserved` no se puede tocar a mano. Los cambios de estado de pedido pasan por `admin_update_order` (máquina de estados; llama a `mark_order_paid`/`cancel_order`). Producto + marcas: `admin_save_product`. Importación CSV todo-o-nada: `admin_import_products`.
+- **Auditoría:** trigger `audit_row()`; solo registra cambios hechos con sesión (`auth.uid()` no nulo) y solo los campos que cambian. `admins.email` sirve para mostrar quién.
+- **Estados** (etiquetas, transiciones, colores): `src/lib/status.ts`.
+- **Ajustes:** la web lee `getSiteSettings()` (`src/lib/settings.ts`, tabla `settings` fusionada sobre `siteConfig`; si la BD falla, usa `siteConfig`). `whatsappUrl(msg, cfg.whatsappNumber)`.
+- **Emails:** plantillas en `src/emails/`, envío en `src/lib/email/` y siempre dentro de `after()` (nunca bloquean ni rompen la respuesta). Sin `RESEND_API_KEY`/`EMAIL_FROM` se omiten. Destino de avisos: `EMAIL_NOTIFY_TO` o el email de Ajustes.
+- **Turnstile:** `src/lib/security/turnstile.ts` + `src/components/forms/turnstile.tsx` (carga dinámica por la CSP `strict-dynamic`). Solo se exige si están las dos claves; ante un fallo de red de Cloudflare deja pasar.
+- **Rate limiting:** checkout 5/10 min, reparación y contacto 5/h, login 20/15 min por IP y 5/15 min por cuenta (hash del email), MFA 10/15 min.
+- **CSV de productos:** `src/lib/admin/csv.ts` (separador `;`, BOM, celdas con fórmula neutralizadas; acepta `;` o `,` al importar; celda vacía = valor por defecto).
+- Guía para el usuario: `docs/panel-y-servicios.md`. Claves de Resend/Turnstile: `node scripts/setup-services.mjs`.
 
 ## Entorno Supabase real
 
@@ -101,19 +109,21 @@ Al cerrar cada fase: `npm run check` + `npm run build` + `npm audit`, commit, re
 ## Estructura
 
 ```
-src/app/            rutas (App Router). layout.tsx = header + footer + botón WhatsApp
-src/proxy.ts        nonce + CSP (y en la Fase 4, protección de /admin)
+src/app/(site)/     web pública (layout = header + footer + botón WhatsApp)
+src/app/admin/      panel: login/, (panel)/ con requireAdmin
+src/proxy.ts        nonce + CSP, sesión y protección de /admin
 src/config/site.ts  datos del negocio (contacto, horario, garantía…). null = [PENDIENTE]
 src/content/        textos editables: home, services, faq, about, forms
-src/lib/            money, schedule, whatsapp, currency, cart/, actions/, security/
-src/components/     ui/ (botones, iconos, primitivas) · brand/ (logo, decoración) · layout/ · sections/ · shop/
+src/lib/            money, schedule, whatsapp, currency, settings, status, cart/, actions/, admin/, email/, images/, security/
+src/emails/         plantillas de email (React → HTML)
+src/components/     ui/ · brand/ · layout/ · sections/ · shop/ · forms/ · admin/
 public/images/      imágenes optimizadas (se generan con `npm run images` desde /assets)
 tests/unit/         Vitest (lógica)
 tests/db/           Vitest + PGlite (migraciones reales)
 tests/integration/  concurrencia contra Supabase
 tests/e2e/          Playwright
 supabase/           migraciones, seed.sql, config.toml
-scripts/            optimize-images, db-push, db-query, setup-env
+scripts/            optimize-images, db-push, db-query, setup-env, setup-services, make-admin
 ```
 
 ## Convenciones
@@ -139,5 +149,7 @@ npm run db:push      # aplica migraciones a Supabase (-- --seed, -- --dry)
 npm run db:query -- "select …"   # consulta de solo lectura
 npm run test:integration         # concurrencia real contra Supabase
 npm run test:e2e     # Playwright (necesita el dev server o lo arranca)
+node scripts/make-admin.mjs email owner   # dar acceso al panel
+node scripts/setup-services.mjs           # claves de Resend y Turnstile
 npm audit
 ```

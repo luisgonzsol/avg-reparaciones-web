@@ -1,10 +1,11 @@
 import { whatsappUrl } from "@/lib/whatsapp";
+import { getSiteSettings } from "@/lib/settings";
 import { ButtonLink, ExternalButton } from "@/components/ui/button";
 import { Container } from "@/components/ui/primitives";
 import { IconArrowRight, IconWhatsApp } from "@/components/ui/icons";
 
 /** Franja final de llamada a la acción, reutilizable en páginas interiores. */
-export function CtaBand({
+export async function CtaBand({
   title = "¿Tu equipo necesita reparación?",
   body = "Cuéntanos qué le pasa. Te respondemos por WhatsApp con los siguientes pasos.",
   primary = { label: "Solicitar reparación", href: "/solicitar-reparacion" },
@@ -15,6 +16,7 @@ export function CtaBand({
   primary?: { label: string; href: string };
   whatsappMessage?: string;
 }) {
+  const cfg = await getSiteSettings();
   return (
     <section aria-label="Contacto rápido" className="py-16 sm:py-20">
       <Container>
@@ -28,7 +30,11 @@ export function CtaBand({
               {primary.label}
               <IconArrowRight size={20} />
             </ButtonLink>
-            <ExternalButton href={whatsappUrl(whatsappMessage)} variant="inverse" size="lg">
+            <ExternalButton
+              href={whatsappUrl(whatsappMessage, cfg.whatsappNumber)}
+              variant="inverse"
+              size="lg"
+            >
               <IconWhatsApp size={22} className="text-[#1f8f4e]" />
               WhatsApp
             </ExternalButton>

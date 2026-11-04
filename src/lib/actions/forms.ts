@@ -4,13 +4,17 @@
  *
  * 1. Validación con Zod (siempre en el servidor).
  * 2. Honeypot: si un bot lo rellena, respondemos "éxito" sin guardar nada.
- * 3. Limitación de frecuencia por IP (hash, sin guardar la IP).
- * 4. Guardado en Supabase mediante el cliente de servidor.
+ * 3. Cloudflare Turnstile (si está configurado).
+ * 4. Limitación de frecuencia por IP (hash, sin guardar la IP).
+ * 5. Fotos: tipo real, tamaño, re-codificadas sin EXIF y subidas a un bucket
+ *    PRIVADO con nombre aleatorio.
+ * 6. Guardado en Supabase y aviso por email a la empresa (después de
+ *    responder al cliente, con after()).
  *
  * Si Supabase aún no está configurado (desarrollo), se simula el envío.
- * Fase 4: aviso por email a la empresa, Turnstile y subida de fotos.
  * Nunca registrar datos personales en los logs.
  */
+import { after } from "next/server";
 import { contactSchema, repairRequestSchema } from "@/lib/validation/forms";
 import { toFieldErrors, type FieldErrors } from "@/lib/validation/common";
 import { DELIVERY_METHODS } from "@/content/forms";
@@ -18,6 +22,16 @@ import { siteConfig } from "@/config/site";
 import { getServiceClient, SupabaseNotConfiguredError } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { checkRateLimit } from "@/lib/security/rate-limit";
+import { TURNSTILE_ERROR, verifyTurnstile } from "@/lib/security/turnstile";
+import {
+  filesFrom,
+  ImageRejectedError,
+  processImage,
+  randomImagePath,
+  type ProcessedImage,
+} from "@/lib/images/server";
+import { PHOTO_LIMITS } from "@/content/forms";
+import { notifyNewContact, notifyNewRepair } from "@/lib/email/notify";
 
 export type RepairActionState =
   | { status: "idle" }
@@ -65,6 +79,34 @@ function formToObject(formData: FormData): Record<string, string> {
   return out;
 }
 
+/**
+ * Sube las fotos ya procesadas al bucket privado y las asocia a la solicitud.
+ * Si alguna falla, la solicitud sigue siendo válida (las fotos son opcionales).
+ */
+async function uploadRepairPhotos(requestId: string, photos: ProcessedImage[]): Promise<number> {
+  if (!photos.length) return 0;
+  const supabase = getServiceClient();
+  const paths: string[] = [];
+  for (const photo of photos) {
+    const path = randomImagePath(requestId, photo.ext);
+    const { error } = await supabase.storage
+      .from("repair-photos")
+      .upload(path, photo.buffer, { contentType: photo.contentType, upsert: false });
+    if (error) {
+      console.error("[solicitud-reparacion] error al subir foto", error.message);
+      continue;
+    }
+    paths.push(path);
+  }
+  if (paths.length) {
+    const { error } = await supabase
+      .from("repair_request_photos")
+      .insert(paths.map((path) => ({ request_id: requestId, path })));
+    if (error) console.error("[solicitud-reparacion] error al registrar fotos", error.message);
+  }
+  return paths.length;
+}
+
 export async function submitRepairRequest(
   _prev: RepairActionState,
   formData: FormData,
@@ -87,8 +129,30 @@ export async function submitRepairRequest(
     return { status: "success", simulated: !data.website, requestNumber: fakeNumber("REP"), summary };
   }
 
+  if (!(await verifyTurnstile(formData))) {
+    return { status: "error", message: TURNSTILE_ERROR, fieldErrors: {} };
+  }
   if (!(await checkRateLimit("repair"))) {
     return { status: "error", message: RATE_ERROR, fieldErrors: {} };
+  }
+
+  // Fotos: se validan y procesan ANTES de guardar la solicitud.
+  const files = filesFrom(formData, "photos");
+  if (files.length > PHOTO_LIMITS.maxFiles) {
+    return {
+      status: "error",
+      message: `Puedes enviar hasta ${PHOTO_LIMITS.maxFiles} fotos.`,
+      fieldErrors: {},
+    };
+  }
+  let photos: ProcessedImage[];
+  try {
+    photos = await Promise.all(
+      files.map((f, i) => processImage(f, { maxSide: 2000, label: `La foto ${i + 1}` })),
+    );
+  } catch (e) {
+    if (e instanceof ImageRejectedError) return { status: "error", message: e.userMessage, fieldErrors: {} };
+    throw e;
   }
 
   try {
@@ -110,8 +174,30 @@ export async function submitRepairRequest(
     if (error) throw new Error(`${error.code} ${error.message}`);
     const row = Array.isArray(rows) ? rows[0] : rows;
     if (!row?.request_number) throw new Error("sin número de solicitud");
-    // Fase 4: aviso por email a la empresa.
-    return { status: "success", simulated: false, requestNumber: row.request_number as string, summary };
+    const requestId = row.id as string;
+    const requestNumber = row.request_number as string;
+
+    const uploaded = await uploadRepairPhotos(requestId, photos);
+
+    after(() =>
+      notifyNewRepair({
+        id: requestId,
+        requestNumber,
+        name: data.name,
+        phone: data.phone,
+        email: data.email || null,
+        state: data.state,
+        city: data.city,
+        equipmentType: data.equipmentType,
+        brand: data.brand,
+        model: data.model || null,
+        issue: data.issue,
+        deliveryMethod: data.deliveryMethod,
+        returnShipping: data.returnShipping,
+        photos: uploaded,
+      }),
+    );
+    return { status: "success", simulated: false, requestNumber, summary };
   } catch (e) {
     if (!(e instanceof SupabaseNotConfiguredError)) {
       console.error("[solicitud-reparacion] error al guardar", e instanceof Error ? e.message : e);
@@ -132,6 +218,9 @@ export async function submitContactMessage(
   if (data.website || !isSupabaseConfigured()) {
     return { status: "success", simulated: !data.website };
   }
+  if (!(await verifyTurnstile(formData))) {
+    return { status: "error", message: TURNSTILE_ERROR, fieldErrors: {} };
+  }
   if (!(await checkRateLimit("contact"))) {
     return { status: "error", message: RATE_ERROR, fieldErrors: {} };
   }
@@ -146,7 +235,15 @@ export async function submitContactMessage(
         message: data.message,
       });
     if (error) throw new Error(`${error.code} ${error.message}`);
-    // Fase 4: aviso por email a la empresa.
+    after(() =>
+      notifyNewContact({
+        name: data.name,
+        phone: data.phone,
+        email: data.email || null,
+        topic: data.topic,
+        message: data.message,
+      }),
+    );
     return { status: "success", simulated: false };
   } catch (e) {
     console.error("[contacto] error al guardar", e instanceof Error ? e.message : e);
