@@ -92,7 +92,7 @@ Al cerrar cada fase: `npm run check` + `npm run build` + `npm audit`, commit, re
 ## Formularios (Fase 2)
 
 - Los esquemas Zod están en `src/lib/validation/` (`common.ts`: teléfono VE, textos, honeypot; `forms.ts`: reparación por pasos y contacto). Los mismos esquemas validan en el cliente y en el servidor.
-- Las Server Actions están en `src/lib/actions/forms.ts`. **En la Fase 3 hay que sustituir la simulación** por el guardado en Supabase y el número correlativo.
+- Las Server Actions están en `src/lib/actions/forms.ts`. Desde la Fase 3 guardan en Supabase con número correlativo. Solo simulan si Supabase no está configurado o si salta el honeypot.
 - Los campos accesibles están en `src/components/forms/fields.tsx`: label, ayuda y error asociados, y `aria-invalid`.
 - Fotos: `src/lib/files.ts` comprueba los magic bytes y el límite de 5 MB. `PhotoPicker` muestra la vista previa en el navegador.
 - Las listas cerradas (estados, tipos de equipo, modalidades de entrega) están en `src/content/forms.ts`.
