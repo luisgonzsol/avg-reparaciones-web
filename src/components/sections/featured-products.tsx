@@ -1,23 +1,29 @@
 import { getCurrency } from "@/lib/currency";
-import { formatRate } from "@/lib/money";
-import { SAMPLE_EXCHANGE_RATE, sampleProducts } from "@/content/sample-products";
+import { getCurrentRate, getFeaturedProducts } from "@/lib/data/catalog";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { ButtonLink } from "@/components/ui/button";
-import { Container, PendingTag, Section, SectionHeading } from "@/components/ui/primitives";
+import { Container, Section, SectionHeading } from "@/components/ui/primitives";
 import { ProductCard } from "@/components/shop/product-card";
+import { RateNotice } from "@/components/shop/price";
 import { IconArrowRight } from "@/components/ui/icons";
 
-const dateFormatter = new Intl.DateTimeFormat("es-VE", {
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-  timeZone: "America/Caracas",
-});
-
+/** Repuestos marcados como destacados desde el panel. */
 export async function FeaturedProducts() {
-  const currency = await getCurrency();
-  // Fase 3: productos destacados y tasa vigente desde Supabase.
-  const products = sampleProducts.filter((p) => p.featured);
-  const { rate, effectiveDate, isSample } = SAMPLE_EXCHANGE_RATE;
+  if (!isSupabaseConfigured()) return null;
+
+  let data;
+  try {
+    const [currency, products, rate] = await Promise.all([
+      getCurrency(),
+      getFeaturedProducts(4),
+      getCurrentRate(),
+    ]);
+    data = { currency, products, rate };
+  } catch (e) {
+    console.error("[inicio] destacados", e instanceof Error ? e.message : e);
+    return null; // Si falla la BD, la portada sigue funcionando sin esta sección.
+  }
+  if (!data.products.length) return null;
 
   return (
     <Section aria-labelledby="destacados-title">
@@ -36,25 +42,14 @@ export async function FeaturedProducts() {
         </div>
 
         <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {products.map((p) => (
+          {data.products.map((p) => (
             <li key={p.slug} className="reveal">
-              <ProductCard product={p} currency={currency} rate={rate} isSample />
+              <ProductCard product={p} currency={data.currency} rate={data.rate?.rate ?? null} />
             </li>
           ))}
         </ul>
 
-        <p className="mt-8 rounded-2xl bg-sand/70 p-4 text-sm text-ink-soft">
-          <strong className="font-semibold text-ink">Tasa del día: {formatRate(rate)}</strong> ·{" "}
-          {dateFormatter.format(new Date(`${effectiveDate}T12:00:00-04:00`))}
-          {isSample && (
-            <>
-              {" "}
-              <PendingTag>[EJEMPLO]</PendingTag>
-            </>
-          )}
-          <br />
-          Monto en Bs referencial según la tasa del día; el monto final se confirma en el enlace de cobro.
-        </p>
+        <RateNotice rate={data.rate} className="mt-8" />
       </Container>
     </Section>
   );

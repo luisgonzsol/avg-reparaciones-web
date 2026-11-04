@@ -52,3 +52,14 @@ describe("formato es-VE", () => {
     expect(n(formatPrice(10, "USD", 236.45))).toMatch(/10,00/);
   });
 });
+
+describe("paridad con Postgres (redondeo mitad hacia arriba)", () => {
+  it.each([
+    [19.5, 236.45, 4610.78],
+    [0.01, 0.5, 0.01],
+    [1, 36.1234, 36.12],
+    [999.99, 1234.5678, 1234555.45],
+  ])("%s USD × %s = %s Bs", (usd, rate, bs) => {
+    expect(usdToBs(usd, rate)).toBe(bs);
+  });
+});

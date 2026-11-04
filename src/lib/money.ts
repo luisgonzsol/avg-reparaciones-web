@@ -22,12 +22,23 @@ export function fromCents(cents: number): number {
   return cents / 100;
 }
 
-/** USD → Bs con la tasa indicada, redondeado a 2 decimales. */
+/** Escala de la tasa: la base de datos la guarda como numeric(14,4). */
+const RATE_SCALE = 10_000;
+
+/**
+ * USD → Bs con la tasa indicada, redondeado a 2 decimales (mitad hacia
+ * arriba). Usa aritmética entera para dar EXACTAMENTE el mismo resultado
+ * que Postgres (round(numeric, 2)): 19,50 × 236,45 = 4610,775 → 4610,78.
+ */
 export function usdToBs(usd: number, rate: number): number {
-  if (!Number.isFinite(usd) || !Number.isFinite(rate) || rate <= 0) {
+  if (!Number.isFinite(usd) || !Number.isFinite(rate) || rate <= 0 || usd < 0) {
     throw new RangeError("Importe o tasa no válidos");
   }
-  return fromCents(Math.round(toCents(usd) * rate));
+  const cents = BigInt(toCents(usd));
+  const scaledRate = BigInt(Math.round(rate * RATE_SCALE));
+  const scale = BigInt(RATE_SCALE);
+  const bsCents = (cents * scaledRate + scale / BigInt(2)) / scale;
+  return Number(bsCents) / 100;
 }
 
 export type LineItem = { priceUsd: number; quantity: number };

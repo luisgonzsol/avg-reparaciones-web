@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { cleanText, normalizeVePhone, toFieldErrors } from "@/lib/validation/common";
-import { contactSchema, repairRequestSchema } from "@/lib/validation/forms";
+import {
+  cleanText,
+  maskIdDoc,
+  normalizeIdDoc,
+  normalizeVePhone,
+  toFieldErrors,
+} from "@/lib/validation/common";
+import { checkoutSchema, contactSchema, repairRequestSchema } from "@/lib/validation/forms";
 
 describe("normalizeVePhone", () => {
   it.each([
@@ -104,5 +110,65 @@ describe("contactSchema", () => {
       privacy: "on",
     });
     expect(r.success).toBe(true);
+  });
+});
+
+describe("cédula / RIF", () => {
+  it.each([
+    ["V12345678", "V-12345678"],
+    ["v-12.345.678", "V-12345678"],
+    ["E 8123456", "E-8123456"],
+    ["J-12345678-9", "J-12345678-9"],
+    ["j123456789", "J-12345678-9"],
+  ])("%s → %s", (input, expected) => {
+    expect(normalizeIdDoc(input)).toBe(expected);
+  });
+
+  it.each(["", "12345678", "X-12345678", "V-12", "V-1234567890123"])("rechaza %s", (input) => {
+    expect(normalizeIdDoc(input)).toBeNull();
+  });
+
+  it("enmascara para páginas públicas", () => {
+    expect(maskIdDoc("V-12345678")).toBe("V-****5678");
+    expect(maskIdDoc("J-12345678-9")).toBe("J-****5678-*");
+    expect(maskIdDoc("basura")).toBe("****");
+  });
+});
+
+describe("checkoutSchema", () => {
+  const base = {
+    name: "Ana Pérez",
+    idDoc: "v12345678",
+    phone: "0414-1234567",
+    email: "ana@gmail.com",
+    deliveryMethod: "store_pickup",
+    terms: "on",
+  };
+
+  it("acepta retiro en tienda sin dirección", () => {
+    const r = checkoutSchema.parse(base);
+    expect(r.idDoc).toBe("V-12345678");
+  });
+
+  it("exige estado, ciudad y dirección para envío nacional", () => {
+    const r = checkoutSchema.safeParse({ ...base, deliveryMethod: "national_shipping" });
+    expect(r.success).toBe(false);
+    if (!r.success) expect(Object.keys(toFieldErrors(r.error)).sort()).toEqual(["address", "city", "state"]);
+  });
+
+  it("acepta envío nacional completo", () => {
+    const r = checkoutSchema.safeParse({
+      ...base,
+      deliveryMethod: "national_shipping",
+      state: "Zulia",
+      city: "Maracaibo",
+      address: "Av. 5 de Julio, edificio Sol, apto 3",
+      agency: "MRW",
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("exige correo en el checkout", () => {
+    expect(checkoutSchema.safeParse({ ...base, email: "" }).success).toBe(false);
   });
 });

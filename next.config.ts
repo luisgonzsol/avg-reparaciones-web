@@ -21,13 +21,24 @@ const securityHeaders = [
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
 ];
 
+const supabaseHost = (() => {
+  try {
+    return process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname : "";
+  } catch {
+    return "";
+  }
+})();
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   images: {
     formats: ["image/avif", "image/webp"],
     qualities: [70, 75, 85],
-    // Fase 3: añadir aquí el dominio de Supabase Storage (remotePatterns).
+    // Imágenes de productos: solo el bucket público "products" de Supabase.
+    remotePatterns: supabaseHost
+      ? [{ protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/products/**" }]
+      : [],
   },
   turbopack: {
     rules: {

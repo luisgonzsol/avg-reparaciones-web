@@ -39,6 +39,38 @@ Al cerrar cada fase: `npm run check` + `npm run build` + `npm audit`, commit, re
   - expiración de pedidos con `pg_cron`;
   - fotos comprimidas en el navegador antes de subirlas (límite de 4,5 MB por petición en Vercel) y validadas de nuevo en el servidor con `sharp`.
 
+## Base de datos y tienda (Fase 3)
+
+- **Migraciones** en `supabase/migrations/`:
+  - `_schema`: tablas, CHECK e índices;
+  - `_functions`: RPC;
+  - `_rls`: políticas;
+  - `_cron`: `pg_cron`, solo existe en Supabase.
+- **Semilla** en `supabase/seed.sql`: 8 categorías, 11 marcas, 20 productos `EJ-xxxx` con `is_sample = true` y una tasa marcada «EJEMPLO».
+- **Aplicar a Supabase:** `npm run db:push`. Con `-- --seed` carga también los datos de ejemplo; con `-- --dry` solo simula. Lee `SUPABASE_DB_URL` de `.env.local`.
+- **Pruebas de BD:** `tests/db/` ejecuta las migraciones reales en PGlite (Postgres embebido) y simula los roles de Supabase. `tests/integration/` lanza la prueba de concurrencia real contra Supabase (`npm run test:integration`).
+- **Stock:** `stock` = unidades físicas, `reserved` = apartadas, disponible = `stock - reserved`.
+  - `create_order` bloquea las filas (`FOR UPDATE`, en orden por id) y reserva.
+  - `mark_order_paid` descuenta el stock definitivamente.
+  - `cancel_order` y `expire_orders` liberan la reserva; si el pedido ya estaba pagado, `cancel_order` devuelve las unidades al stock.
+  - Las cuatro funciones están restringidas a `service_role`.
+- **Precios y totales** los calcula SIEMPRE la BD. `src/lib/money.ts` usa aritmética entera (BigInt) para coincidir al céntimo con `round(numeric, 2)` de Postgres.
+- **Clientes Supabase** (`src/lib/supabase/server.ts`):
+  - `getPublicClient()`: clave publicable, sujeta a RLS; para el catálogo.
+  - `getServiceClient()`: clave secreta, solo en el servidor; para RPC y altas.
+  - Variables: `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` y `SUPABASE_SECRET_KEY`. Se aceptan también los nombres antiguos `*_ANON_KEY` y `*_SERVICE_ROLE_KEY`.
+- **Página `/pedido/[token]`:** solo con el token aleatorio de 64 hex. Muestra la cédula enmascarada. `noindex` y `no-referrer`.
+- **Sin Supabase configurado:**
+  - `/tienda` muestra el aviso `StoreUnavailable`;
+  - Inicio oculta los destacados;
+  - los formularios simulan el envío.
+- **Rate limiting:** `src/lib/security/rate-limit.ts` usa la tabla `rate_limits` con el hash de la IP más una sal. Si la base de datos falla, deja pasar la petición (fail-open).
+- **Pendiente para la Fase 4:**
+  - la tabla `settings` existe, pero la web aún lee `src/config/site.ts`;
+  - emails;
+  - escritura desde el panel y auditoría;
+  - bucket de Storage y subida de fotos.
+
 ## Formularios (Fase 2)
 
 - Los esquemas Zod están en `src/lib/validation/` (`common.ts`: teléfono VE, textos, honeypot; `forms.ts`: reparación por pasos y contacto). Los mismos esquemas validan en el cliente y en el servidor.

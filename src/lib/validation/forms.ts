@@ -1,6 +1,16 @@
 import { z } from "zod";
 import { CONTACT_TOPICS, DELIVERY_METHOD_KEYS, EQUIPMENT_TYPES, VENEZUELA_STATES } from "@/content/forms";
-import { honeypot, mustAccept, optionalEmail, optionalText, text, vePhone, yesNo } from "./common";
+import {
+  honeypot,
+  idDoc,
+  mustAccept,
+  optionalEmail,
+  optionalText,
+  requiredEmail,
+  text,
+  vePhone,
+  yesNo,
+} from "./common";
 
 const PRIVACY_MSG = "Debes aceptar la política de privacidad para continuar.";
 
@@ -55,3 +65,60 @@ export const contactSchema = z.object({
 });
 
 export type ContactMessage = z.output<typeof contactSchema>;
+
+/* ---------- Checkout ---------- */
+
+export const ORDER_DELIVERY = {
+  store_pickup: { label: "Retiro en la tienda", description: "Sin coste. En nuestro local de Caracas." },
+  national_shipping: {
+    label: "Envío nacional",
+    description: "Por agencia de encomiendas a toda Venezuela. El envío tiene un coste extra a tu cargo.",
+  },
+} as const;
+export type OrderDelivery = keyof typeof ORDER_DELIVERY;
+
+export const cartLinesSchema = z
+  .array(
+    z.object({
+      slug: z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/),
+      quantity: z.number().int().min(1).max(99),
+    }),
+  )
+  .min(1, "Tu carrito está vacío.")
+  .max(30, "Demasiados productos en el carrito.");
+
+export const checkoutSchema = z
+  .object({
+    name: text(2, 100, "tu nombre y apellido"),
+    idDoc,
+    phone: vePhone,
+    email: requiredEmail,
+    deliveryMethod: z.enum(["store_pickup", "national_shipping"], {
+      error: "Elige cómo quieres recibir tu pedido.",
+    }),
+    state: z.string().optional(),
+    city: optionalText(80, "la ciudad"),
+    address: optionalText(300, "la dirección"),
+    agency: optionalText(80, "la agencia"),
+    notes: optionalText(1000, "las notas"),
+    terms: mustAccept("Debes aceptar los términos y la política de privacidad."),
+    website: honeypot,
+  })
+  .superRefine((v, ctx) => {
+    if (v.deliveryMethod !== "national_shipping") return;
+    if (!v.state || !(VENEZUELA_STATES as readonly string[]).includes(v.state)) {
+      ctx.addIssue({ code: "custom", path: ["state"], message: "Elige el estado de destino." });
+    }
+    if (!v.city || v.city.length < 2) {
+      ctx.addIssue({ code: "custom", path: ["city"], message: "Escribe la ciudad de destino." });
+    }
+    if (!v.address || v.address.length < 8) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["address"],
+        message: "Escribe la dirección de entrega completa.",
+      });
+    }
+  });
+
+export type CheckoutInput = z.output<typeof checkoutSchema>;
