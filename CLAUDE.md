@@ -9,7 +9,7 @@ Requisitos completos en `PROMPT.md`, que es la fuente de verdad del encargo. Est
 
 - [x] **Fase 1** — Base y diseño: setup, tokens, layout, Inicio con datos de ejemplo, cabeceras de seguridad.
 - [x] **Fase 2** — Páginas informativas y formularios. Los formularios se validan en el servidor, pero el envío es **simulado**: no se guarda nada y el número de solicitud lleva la marca [SIMULACIÓN]. Las fotos se validan en el navegador y aún no se suben.
-- [ ] **Fase 3** — Supabase, tienda, carrito, checkout con reserva atómica.
+- [x] **Fase 3** — Supabase (proyecto real conectado), tienda, carrito, checkout con reserva atómica, expiración con pg_cron, formularios guardando en la BD.
 - [ ] **Fase 4** — Panel admin, emails, Storage, rate limiting, Turnstile.
 - [ ] **Fase 5** — SEO, accesibilidad, Lighthouse, E2E, despliegue.
 
@@ -22,7 +22,7 @@ Al cerrar cada fase: `npm run check` + `npm run build` + `npm audit`, commit, re
   - `<Image priority>` está obsoleto; se usa `preload`.
   - `LayoutProps` / `PageProps` son tipos globales generados por `next typegen`.
 - **Tailwind CSS v4**, cargado con `@tailwindcss/turbopack` (configurado en `next.config.ts`; no hay postcss.config). Los tokens están en `@theme` dentro de `src/app/globals.css`.
-- Zod, clsx. Vitest para la lógica. Playwright llegará en la Fase 5.
+- Zod, clsx. Vitest (lógica y BD con PGlite) y Playwright (E2E, escritorio y móvil).
 - Supabase, Resend y Turnstile llegan en las Fases 3 y 4.
 - npm como gestor de paquetes. Node ≥ 20.9 (el desarrollo se hace con Node 26).
 
@@ -71,6 +71,24 @@ Al cerrar cada fase: `npm run check` + `npm run build` + `npm audit`, commit, re
   - escritura desde el panel y auditoría;
   - bucket de Storage y subida de fotos.
 
+## Entorno Supabase real
+
+- Proyecto `ldudfupxmuqymiiidlab`, región **eu-west-1 (Irlanda)**, elegida por el cliente. Al desplegar en Vercel, pon las funciones en **`dub1`** (Dublín) para que queden cerca de la BD.
+- Proyecto creado con "Automatically expose new tables" desactivado y "automatic RLS" activado. Las migraciones conceden los permisos de forma explícita; está probado en ambos modos (`tests/db/no-auto-expose.test.ts`).
+- `.env.local` (no va a git): URL, clave publicable, secret key y `SUPABASE_DB_URL` (Session pooler).
+  - Asistente para las claves secretas: `node scripts/setup-env.mjs`. En este Windows, PowerShell bloquea `npm.ps1`, así que hay que usar `node …` directamente.
+- Consultas de solo lectura: `npm run db:query -- "select …"`. Nunca imprime la cadena de conexión.
+- **Las pruebas E2E e integración se ejecutan contra esta BD** y limpian lo que crean. Efecto secundario: avanzan los contadores `counters`.
+- **Antes de publicar:**
+  - si no hay pedidos ni solicitudes reales, ejecutar `delete from public.counters;` (SQL Editor de Supabase) para empezar en AVG-AAAA-0001 / REP-AAAA-0001;
+  - borrar los productos `is_sample`;
+  - cargar la tasa real.
+- Una vez en producción con clientes reales, no lanzar E2E contra esta BD: crear un proyecto Supabase de pruebas.
+
+## Next.js: try/catch en Server Components
+
+- Todo `catch` en código de servidor que envuelva `cookies()`, `headers()`, `notFound()` o `redirect()` debe llamar primero a `unstable_rethrow(e)` (de `next/navigation`). Si no, se tragan las señales internas de Next.js.
+
 ## Formularios (Fase 2)
 
 - Los esquemas Zod están en `src/lib/validation/` (`common.ts`: teléfono VE, textos, honeypot; `forms.ts`: reparación por pasos y contacto). Los mismos esquemas validan en el cliente y en el servidor.
@@ -86,11 +104,16 @@ Al cerrar cada fase: `npm run check` + `npm run build` + `npm audit`, commit, re
 src/app/            rutas (App Router). layout.tsx = header + footer + botón WhatsApp
 src/proxy.ts        nonce + CSP (y en la Fase 4, protección de /admin)
 src/config/site.ts  datos del negocio (contacto, horario, garantía…). null = [PENDIENTE]
-src/content/        textos editables: home, services, faq, sample-products ([EJEMPLO])
+src/content/        textos editables: home, services, faq, about, forms
 src/lib/            money, schedule, whatsapp, currency, cart/, actions/, security/
 src/components/     ui/ (botones, iconos, primitivas) · brand/ (logo, decoración) · layout/ · sections/ · shop/
 public/images/      imágenes optimizadas (se generan con `npm run images` desde /assets)
-tests/unit/         Vitest
+tests/unit/         Vitest (lógica)
+tests/db/           Vitest + PGlite (migraciones reales)
+tests/integration/  concurrencia contra Supabase
+tests/e2e/          Playwright
+supabase/           migraciones, seed.sql, config.toml
+scripts/            optimize-images, db-push, db-query, setup-env
 ```
 
 ## Convenciones
@@ -112,5 +135,9 @@ npm run check        # lint + typecheck + tests
 npm run build        # build de producción
 npm run format       # Prettier
 npm run images       # reoptimiza las imágenes de /assets en /public/images
+npm run db:push      # aplica migraciones a Supabase (-- --seed, -- --dry)
+npm run db:query -- "select …"   # consulta de solo lectura
+npm run test:integration         # concurrencia real contra Supabase
+npm run test:e2e     # Playwright (necesita el dev server o lo arranca)
 npm audit
 ```

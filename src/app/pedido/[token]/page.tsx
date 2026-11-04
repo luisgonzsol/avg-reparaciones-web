@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, unstable_rethrow } from "next/navigation";
 import clsx from "clsx";
 import { getOrderByToken } from "@/lib/data/orders";
 import { formatBs, formatRate, formatUsd } from "@/lib/money";
@@ -28,6 +28,7 @@ export default async function OrderPage({ params }: PageProps<"/pedido/[token]">
   try {
     order = await getOrderByToken(token);
   } catch (e) {
+    unstable_rethrow(e); // deja pasar las señales internas de Next.js
     console.error("[pedido]", e instanceof Error ? e.message : e);
     throw new Error("No se pudo cargar el pedido");
   }

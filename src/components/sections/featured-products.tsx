@@ -1,4 +1,5 @@
 import { getCurrency } from "@/lib/currency";
+import { unstable_rethrow } from "next/navigation";
 import { getCurrentRate, getFeaturedProducts } from "@/lib/data/catalog";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { ButtonLink } from "@/components/ui/button";
@@ -20,6 +21,7 @@ export async function FeaturedProducts() {
     ]);
     data = { currency, products, rate };
   } catch (e) {
+    unstable_rethrow(e); // deja pasar las señales internas de Next.js
     console.error("[inicio] destacados", e instanceof Error ? e.message : e);
     return null; // Si falla la BD, la portada sigue funcionando sin esta sección.
   }

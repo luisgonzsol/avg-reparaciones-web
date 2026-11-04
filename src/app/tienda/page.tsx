@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { unstable_rethrow } from "next/navigation";
 import { getCurrency } from "@/lib/currency";
 import { getBrands, getCategories, getCurrentRate, searchProducts } from "@/lib/data/catalog";
 import { parseCatalogParams } from "@/lib/catalog";
@@ -32,6 +33,7 @@ async function loadCatalog(sp: Record<string, string | string[] | undefined>) {
     ]);
     return { params, result, categories, brands, rate, currency };
   } catch (e) {
+    unstable_rethrow(e); // deja pasar las señales internas de Next.js
     console.error("[tienda]", e instanceof Error ? e.message : e);
     return null;
   }

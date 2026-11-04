@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { notFound } from "next/navigation";
+import { notFound, unstable_rethrow } from "next/navigation";
 import { getCurrency } from "@/lib/currency";
 import { getCurrentRate, getProductBySlug } from "@/lib/data/catalog";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -21,6 +21,7 @@ async function load(slug: string) {
     const product = await getProductBySlug(slug);
     return { unavailable: false as const, product };
   } catch (e) {
+    unstable_rethrow(e); // deja pasar las señales internas de Next.js
     console.error("[ficha]", e instanceof Error ? e.message : e);
     return { unavailable: true as const };
   }

@@ -24,6 +24,21 @@ alter table public.audit_log             enable row level security;
 alter table public.counters              enable row level security;
 alter table public.rate_limits           enable row level security;
 
+-- ---------- Privilegios de tabla explícitos ----------
+-- No dependemos de "Automatically expose new tables" de Supabase: se
+-- concede exactamente lo necesario (y RLS filtra las filas).
+grant usage on schema public to anon, authenticated, service_role;
+grant select on public.categories, public.brands, public.products, public.product_brands,
+  public.product_images, public.exchange_rates, public.settings
+  to anon, authenticated;
+grant select on public.orders, public.order_items, public.order_status_history,
+  public.repair_requests, public.repair_request_photos, public.contact_messages,
+  public.admins, public.audit_log
+  to authenticated;
+-- El servidor (service_role, no sujeto a RLS) opera con todas las tablas.
+grant all on all tables in schema public to service_role;
+grant usage, select on all sequences in schema public to service_role;
+
 -- ---------- Privilegios de tabla (defensa en profundidad) ----------
 -- anon: sin escritura en ninguna tabla y sin lectura de tablas privadas.
 revoke insert, update, delete, truncate on all tables in schema public from anon;

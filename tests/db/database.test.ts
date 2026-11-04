@@ -26,7 +26,9 @@ const SUPABASE_STUBS = `
   create function auth.uid() returns uuid language sql stable as
     $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
   grant execute on function auth.uid() to anon, authenticated, service_role;
-  -- Supabase concede por defecto estos privilegios en el esquema public:
+  -- Peor caso: "Automatically expose new tables" ACTIVADO en Supabase
+  -- (concede todo por defecto). Las migraciones deben revocar lo que sobra.
+  -- Con la opción desactivada, los GRANT explícitos de las migraciones bastan.
   alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
   alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
   alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
