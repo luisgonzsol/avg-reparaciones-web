@@ -33,7 +33,7 @@ export default function ErrorPage({ error, retry }: { error: unknown; retry: () 
           Intentar de nuevo
         </button>
         <ExternalButton href={whatsappUrl()} variant="secondary" size="lg">
-          <IconWhatsApp size={22} className="text-[#1f8f4e]" />
+          <IconWhatsApp size={22} className="text-[#187a41]" />
           Escríbenos
         </ExternalButton>
       </div>

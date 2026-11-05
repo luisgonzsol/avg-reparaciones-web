@@ -1,6 +1,6 @@
 import "server-only";
 import { cache } from "react";
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { siteConfig, type SiteConfig } from "@/config/site";
 import { getPublicClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";

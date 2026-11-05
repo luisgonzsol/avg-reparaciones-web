@@ -40,9 +40,15 @@ factor MFA, y vuelve a activarlo desde el panel.
 
 ### Ajustes de seguridad en Supabase (una sola vez)
 
-- **Authentication → Sign In / Providers → Email**: desactiva **Allow new users to sign up**
-  (así nadie puede crearse una cuenta por su cuenta).
-- **Authentication → Multi-Factor**: comprueba que **TOTP** está habilitado.
+En **Authentication → Sign In / Providers**:
+
+- Arriba, en **User Signups**, desactiva **Allow new users to sign up** y pulsa
+  **Save changes**. Así nadie puede crearse una cuenta.
+- Más abajo, en la lista de proveedores, **Email debe seguir activado**
+  (_Enable Email provider_ encendido). Si lo apagas, nadie podrá entrar al panel:
+  el login responderá «Email o contraseña incorrectos».
+
+En **Authentication → Multi-Factor**, comprueba que **TOTP** está habilitado.
 
 ---
 

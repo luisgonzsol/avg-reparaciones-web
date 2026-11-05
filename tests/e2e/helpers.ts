@@ -54,3 +54,43 @@ export async function fillCheckout(page: Page) {
   await page.getByText("Retiro en la tienda", { exact: true }).click();
   await page.locator('input[name="terms"]').check();
 }
+
+/**
+ * Administrador TEMPORAL para las pruebas: se crea con una contraseña
+ * aleatoria (nunca se guarda ni se muestra) y se borra al terminar.
+ */
+export async function createTempAdmin() {
+  const { randomBytes } = await import("node:crypto");
+  const email = `e2e-admin-${randomBytes(4).toString("hex")}@example.test`;
+  const password = randomBytes(24).toString("base64url");
+  const { data, error } = await db().auth.admin.createUser({ email, password, email_confirm: true });
+  if (error) throw error;
+  const userId = data.user.id;
+  const { error: e2 } = await db().from("admins").insert({ user_id: userId, role: "staff", email });
+  if (e2) throw e2;
+  return {
+    email,
+    password,
+    remove: async () => {
+      await db().from("admins").delete().eq("user_id", userId);
+      await db().auth.admin.deleteUser(userId);
+    },
+  };
+}
+
+/** Crea un pedido de prueba (retiro en tienda) directamente en la BD. */
+export async function createTestOrder(slug: string) {
+  const { data, error } = await db().rpc("create_order", {
+    p_customer: {
+      name: "Prueba Panel",
+      id_doc: "V-12345678",
+      phone: "+584121234567",
+      email: "prueba.e2e@example.com",
+      delivery_method: "store_pickup",
+    },
+    p_items: [{ slug, quantity: 1 }],
+  });
+  if (error) throw error;
+  const row = (Array.isArray(data) ? data[0] : data) as { order_id: string; public_token: string };
+  return { id: row.order_id, token: row.public_token };
+}

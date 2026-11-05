@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { CONTACT_TOPICS, DELIVERY_METHOD_KEYS, EQUIPMENT_TYPES, VENEZUELA_STATES } from "@/content/forms";
 import {
   honeypot,

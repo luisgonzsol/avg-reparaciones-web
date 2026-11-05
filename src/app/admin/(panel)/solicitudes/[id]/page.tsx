@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { requireAdmin } from "@/lib/admin/session";
 import { updateRepairRequest } from "@/lib/actions/admin";
 import { DELIVERY_METHODS, type DeliveryMethod } from "@/content/forms";

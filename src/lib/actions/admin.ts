@@ -13,7 +13,7 @@
  */
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { requireAdmin } from "@/lib/admin/session";
 import { readProductsCsv } from "@/lib/admin/csv";
 import { slugify } from "@/lib/slug";

@@ -5,7 +5,7 @@
  * base de datos; nunca se confía en lo que envía el navegador.
  */
 import { after } from "next/server";
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { getCurrentRate, getProductsBySlugs } from "@/lib/data/catalog";
 import { getServiceClient, SupabaseNotConfiguredError } from "@/lib/supabase/server";
 import { cartLinesSchema, checkoutSchema } from "@/lib/validation/forms";

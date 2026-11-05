@@ -11,7 +11,8 @@ const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: "--font-jakarta",
   weight: ["600", "700", "800"],
-  style: ["normal", "italic"],
+  // Sin cursiva: solo la usa el logotipo provisional (el navegador la sintetiza)
+  // y así nos ahorramos ~28 KB de fuente en la primera carga.
   display: "swap",
 });
 

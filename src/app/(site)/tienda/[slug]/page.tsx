@@ -15,6 +15,8 @@ import { AvailabilityBadge } from "@/components/shop/availability-badge";
 import { Price, RateNotice } from "@/components/shop/price";
 import { AddToCart } from "@/components/shop/add-to-cart";
 import { StoreUnavailable } from "@/components/shop/store-unavailable";
+import { JsonLd } from "@/components/seo/json-ld";
+import { productJsonLd } from "@/lib/seo/json-ld";
 
 async function load(slug: string) {
   if (!isSupabaseConfigured()) return { unavailable: true as const };
@@ -65,6 +67,7 @@ export default async function ProductPage({ params }: PageProps<"/tienda/[slug]"
 
   return (
     <>
+      {!p.isSample && <JsonLd data={productJsonLd(cfg, p)} />}
       <PageHeader
         crumbs={[
           { href: "/tienda", label: "Tienda" },
@@ -90,7 +93,8 @@ export default async function ProductPage({ params }: PageProps<"/tienda/[slug]"
                   src={p.images[0]!.url}
                   alt={p.images[0]!.alt}
                   fill
-                  preload
+                  loading="eager"
+                  fetchPriority="high"
                   sizes="(min-width: 1024px) 36rem, 92vw"
                   className="object-contain"
                 />
@@ -164,7 +168,7 @@ export default async function ProductPage({ params }: PageProps<"/tienda/[slug]"
             variant="secondary"
             size="lg"
           >
-            <IconWhatsApp size={22} className="text-[#1f8f4e]" />
+            <IconWhatsApp size={22} className="text-[#187a41]" />
             Preguntar por este repuesto
           </ExternalButton>
 

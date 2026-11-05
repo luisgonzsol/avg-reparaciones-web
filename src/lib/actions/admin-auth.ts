@@ -8,7 +8,7 @@
  * - Solo entran usuarios presentes en la tabla `admins`.
  */
 import { redirect } from "next/navigation";
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { getAuthClient } from "@/lib/supabase/auth";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { checkRateLimit } from "@/lib/security/rate-limit";
@@ -40,7 +40,12 @@ export async function login(_prev: AuthFormState, formData: FormData): Promise<A
 
   const supabase = await getAuthClient();
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error || !data.user) return { error: LOGIN_ERROR };
+  if (error || !data.user) {
+    // Un fallo de configuración (p. ej. «email_provider_disabled») se registra
+    // para poder diagnosticarlo. Nunca se registra el email ni la contraseña.
+    if (error && error.code !== "invalid_credentials") console.error("[login]", error.status, error.code);
+    return { error: LOGIN_ERROR };
+  }
 
   const { data: admin } = await supabase
     .from("admins")

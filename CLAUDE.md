@@ -11,7 +11,7 @@ Requisitos completos en `PROMPT.md`, que es la fuente de verdad del encargo. Est
 - [x] **Fase 2** — Páginas informativas y formularios. Los formularios se validan en el servidor, pero el envío es **simulado**: no se guarda nada y el número de solicitud lleva la marca [SIMULACIÓN]. Las fotos se validan en el navegador y aún no se suben.
 - [x] **Fase 3** — Supabase (proyecto real conectado), tienda, carrito, checkout con reserva atómica, expiración con pg_cron, formularios guardando en la BD.
 - [x] **Fase 4** — Panel admin con MFA, auditoría, ajustes desde la BD, emails (Resend), Storage, rate limiting, Turnstile.
-- [ ] **Fase 5** — SEO, accesibilidad, Lighthouse, E2E, despliegue.
+- [x] **Fase 5** — SEO (sitemap, robots, OG, JSON-LD), accesibilidad (axe en E2E), Lighthouse ≥ 90 móvil, README y guía de Vercel. El despliegue real lo hace el usuario con `docs/despliegue-vercel.md`.
 
 Al cerrar cada fase: `npm run check` + `npm run build` + `npm audit`, commit, resumen al usuario y lista [PENDIENTE]. Luego se espera su confirmación.
 
@@ -19,7 +19,7 @@ Al cerrar cada fase: `npm run check` + `npm run build` + `npm audit`, commit, re
 
 - **Next.js 16.4** (App Router, Turbopack), React 19.3, TypeScript estricto. **Lee `node_modules/next/dist/docs/` antes de usar APIs de Next**, porque cambian entre versiones:
   - `middleware` ahora se llama **`proxy`** (`src/proxy.ts`).
-  - `<Image priority>` está obsoleto; se usa `preload`.
+  - `<Image priority>` está obsoleto. Para la imagen LCP se usa `loading="eager"` + `fetchPriority="high"` (con `preload` la imagen bajaba con prioridad baja y competía con las fuentes).
   - `LayoutProps` / `PageProps` son tipos globales generados por `next typegen`.
 - **Tailwind CSS v4**, cargado con `@tailwindcss/turbopack` (configurado en `next.config.ts`; no hay postcss.config). Los tokens están en `@theme` dentro de `src/app/globals.css`.
 - Zod, clsx. Vitest (lógica y BD con PGlite) y Playwright (E2E, escritorio y móvil).
@@ -92,6 +92,18 @@ Al cerrar cada fase: `npm run check` + `npm run build` + `npm audit`, commit, re
   - borrar los productos `is_sample`;
   - cargar la tasa real.
 - Una vez en producción con clientes reales, no lanzar E2E contra esta BD: crear un proyecto Supabase de pruebas.
+
+## SEO, accesibilidad y rendimiento (Fase 5)
+
+- `src/app/robots.ts` (bloquea /admin, /checkout, /carrito, /pedido; todo bloqueado si `VERCEL_ENV` ≠ production), `src/app/sitemap.ts` (páginas, servicios y productos no `is_sample`), `src/app/opengraph-image.tsx`.
+- JSON-LD con `src/lib/seo/json-ld.ts` + `<JsonLd>` (única excepción permitida a `dangerouslySetInnerHTML`: `serializeJsonLd` escapa `<`, `>`, `&`, U+2028/9). Nunca incluir datos [PENDIENTE]: `geo` y `email` solo aparecen cuando existen.
+- Productos `is_sample` llevan `noindex` y no tienen JSON-LD.
+- **Zod:** importar siempre `z` desde `@/lib/zod` (`jitless`, para que no intente `new Function` contra la CSP). ESLint lo impone.
+- **Contraste:** verde de WhatsApp `#187a41` (hover `#146c39`), 5,4:1 con blanco. El amarillo `bolt` nunca como texto sobre fondo claro.
+- Accesibilidad automática: `tests/e2e/a11y.spec.ts` (axe, WCAG 2.1 AA) en las páginas públicas. Si añades una página, añádela ahí.
+- Lighthouse: informes en `docs/lighthouse/`. Para repetirlo: build + `next start -p 3100` + `npx lighthouse@12.8.2 http://localhost:3100/ --chrome-flags="--headless=new"`.
+- E2E contra producción local: `E2E_BASE_URL=http://localhost:3100 npx playwright test`. `admin-orders.spec.ts` crea un admin temporal con contraseña aleatoria y lo borra (se omite si Turnstile está activo).
+- Vercel: `vercel.json` fija la región `dub1`. Si falta `NEXT_PUBLIC_SITE_URL`, `siteConfig.url` usa `VERCEL_PROJECT_PRODUCTION_URL`.
 
 ## Next.js: try/catch en Server Components
 

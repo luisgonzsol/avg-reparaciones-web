@@ -2,7 +2,7 @@
  * Validaciones comunes (Zod). Se usan en el cliente para dar mensajes
  * claros y SIEMPRE se repiten en el servidor.
  */
-import { z } from "zod";
+import { z } from "@/lib/zod";
 
 /** Quita espacios sobrantes y caracteres de control. */
 export function cleanText(value: string): string {

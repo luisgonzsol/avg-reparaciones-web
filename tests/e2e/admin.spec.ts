@@ -19,7 +19,9 @@ test.describe("panel de administración", () => {
     await page.getByLabel("Email").fill("nadie@example.com");
     await page.getByLabel("Contraseña").fill("contraseña-incorrecta");
     await page.getByRole("button", { name: "Entrar" }).click();
-    await expect(page.getByRole("alert").filter({ hasText: "Email o contraseña incorrectos." })).toBeVisible();
+    await expect(
+      page.getByRole("alert").filter({ hasText: "Email o contraseña incorrectos." }),
+    ).toBeVisible();
     await expect(page).toHaveURL(/\/admin\/login$/);
   });
 

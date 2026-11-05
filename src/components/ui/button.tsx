@@ -14,7 +14,7 @@ const variants: Record<Variant, string> = {
   primary: "bg-brand text-white shadow-soft hover:bg-brand-hover hover:shadow-lift",
   secondary: "bg-surface text-ink ring-1 ring-inset ring-line hover:ring-ink/40 hover:shadow-soft",
   ghost: "text-ink hover:bg-sand",
-  whatsapp: "bg-[#1f8f4e] text-white shadow-soft hover:bg-[#187a41] hover:shadow-lift",
+  whatsapp: "bg-[#187a41] text-white shadow-soft hover:bg-[#146c39] hover:shadow-lift",
   inverse: "bg-white text-ink hover:bg-canvas",
 };
 

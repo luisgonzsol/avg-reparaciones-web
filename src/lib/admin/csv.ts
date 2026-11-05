@@ -11,7 +11,7 @@
  * - Precio con punto o coma decimal: 12.50 o 12,50.
  * - slug vacío: se genera a partir del nombre.
  */
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { slugify } from "@/lib/slug";
 
 export const CSV_HEADERS = [

@@ -34,7 +34,7 @@ export default async function RepairRequestPage() {
             <h2 className="text-lg font-bold">Qué pasa después</h2>
             <ol className="mt-4 space-y-4 text-[0.95rem] text-ink-soft">
               <li className="flex gap-3">
-                <IconWhatsApp size={22} className="shrink-0 text-[#1f8f4e]" />
+                <IconWhatsApp size={22} className="shrink-0 text-[#187a41]" />
                 Te escribimos por WhatsApp para confirmar los detalles.
               </li>
               <li className="flex gap-3">

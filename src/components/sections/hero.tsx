@@ -40,7 +40,8 @@ export function Hero() {
               src={localPhoto}
               alt="Fachada del local de AVG Reparaciones en Caracas, con la pared de repuestos y la vitrina del mostrador"
               sizes="(min-width: 1024px) 40vw, (min-width: 640px) 28rem, 92vw"
-              preload
+              loading="eager"
+              fetchPriority="high"
               placeholder="blur"
               quality={75}
               className="aspect-[5/6] h-auto w-full object-cover"

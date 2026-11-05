@@ -35,7 +35,7 @@ export async function CtaBand({
               variant="inverse"
               size="lg"
             >
-              <IconWhatsApp size={22} className="text-[#1f8f4e]" />
+              <IconWhatsApp size={22} className="text-[#187a41]" />
               WhatsApp
             </ExternalButton>
           </div>

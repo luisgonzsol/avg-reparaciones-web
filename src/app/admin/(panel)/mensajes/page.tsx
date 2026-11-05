@@ -81,7 +81,7 @@ export default async function MessagesPage({ searchParams }: PageProps<"/admin/m
                     )}
                     variant="secondary"
                   >
-                    <IconWhatsApp size={20} className="text-[#1f8f4e]" />
+                    <IconWhatsApp size={20} className="text-[#187a41]" />
                     {m.phone}
                   </ExternalButton>
                   {m.email && (

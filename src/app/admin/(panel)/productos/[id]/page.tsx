@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { requireAdmin } from "@/lib/admin/session";
 import { deleteProduct, deleteProductImage, makeImageCover } from "@/lib/actions/admin";
 import { productImageUrl } from "@/lib/supabase/config";

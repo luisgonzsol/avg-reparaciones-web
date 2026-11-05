@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import { PageHeader } from "@/components/ui/page-header";
 import { Faq } from "@/components/sections/faq";
 import { CtaBand } from "@/components/sections/cta-band";
+import { JsonLd } from "@/components/seo/json-ld";
+import { getFaq } from "@/content/faq";
+import { getSiteSettings } from "@/lib/settings";
+import { faqJsonLd } from "@/lib/seo/json-ld";
 
 export const metadata: Metadata = {
   title: "Preguntas frecuentes",
@@ -10,9 +14,11 @@ export const metadata: Metadata = {
   alternates: { canonical: "/preguntas-frecuentes" },
 };
 
-export default function FaqPage() {
+export default async function FaqPage() {
+  const cfg = await getSiteSettings();
   return (
     <>
+      <JsonLd data={faqJsonLd(getFaq(cfg))} />
       <PageHeader
         crumbs={[{ label: "Preguntas frecuentes" }]}
         eyebrow="Ayuda"

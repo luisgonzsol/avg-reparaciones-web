@@ -52,7 +52,7 @@ export default async function ServicePage({ params }: PageProps<"/servicios/[slu
             <IconArrowRight size={20} />
           </ButtonLink>
           <ExternalButton href={whatsappUrl(waMessage, cfg.whatsappNumber)} variant="secondary" size="lg">
-            <IconWhatsApp size={22} className="text-[#1f8f4e]" />
+            <IconWhatsApp size={22} className="text-[#187a41]" />
             Consultar por WhatsApp
           </ExternalButton>
         </div>

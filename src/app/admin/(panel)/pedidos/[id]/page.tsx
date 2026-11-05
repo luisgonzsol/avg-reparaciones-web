@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { z } from "zod";
+import { z } from "@/lib/zod";
 import { requireAdmin } from "@/lib/admin/session";
 import { emailPaymentLink, markLinkSent, updateOrder } from "@/lib/actions/admin";
 import { isEmailConfigured } from "@/lib/email/send";
@@ -239,7 +239,7 @@ export default async function OrderDetail({ params }: PageProps<"/admin/pedidos/
               variant="secondary"
               className="mt-4"
             >
-              <IconWhatsApp size={20} className="text-[#1f8f4e]" />
+              <IconWhatsApp size={20} className="text-[#187a41]" />
               Escribir al cliente
             </ExternalButton>
           </Card>

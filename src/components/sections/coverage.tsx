@@ -25,14 +25,14 @@ export async function Coverage() {
               <h2 id="cobertura-title" className="mt-4 max-w-2xl text-3xl font-bold text-white sm:text-4xl">
                 {coverage.title}
               </h2>
-              <p className="mt-4 max-w-2xl text-lg text-white/90">{coverage.body}</p>
+              <p className="mt-4 max-w-2xl text-lg text-white">{coverage.body}</p>
             </div>
             <ExternalButton
               href={whatsappUrl(coverage.cta.message, cfg.whatsappNumber)}
               variant="inverse"
               size="lg"
             >
-              <IconWhatsApp size={22} className="text-[#1f8f4e]" />
+              <IconWhatsApp size={22} className="text-[#187a41]" />
               {coverage.cta.label}
             </ExternalButton>
           </div>

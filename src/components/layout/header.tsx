@@ -19,12 +19,9 @@ export async function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-line/70 bg-canvas/90 backdrop-blur-md supports-[backdrop-filter]:bg-canvas/75">
       <Container className="flex h-18 items-center gap-3 sm:h-20">
-        <Link
-          href="/"
-          className="mr-auto shrink-0 rounded-lg"
-          aria-label="AVG Reparaciones C.A., ir al inicio"
-        >
+        <Link href="/" className="mr-auto shrink-0 rounded-lg">
           <Logo height={42} />
+          <span className="sr-only">, ir al inicio</span>
         </Link>
 
         <nav aria-label="Principal" className="hidden lg:block">

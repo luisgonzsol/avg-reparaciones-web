@@ -90,7 +90,10 @@ export default function AboutPage() {
           <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {about.values.map((v, i) => (
               <li key={v.title} className="reveal rounded-(--radius-card) bg-canvas p-7 ring-1 ring-line">
-                <span aria-hidden="true" className="font-display text-4xl font-extrabold text-bolt">
+                <span
+                  aria-hidden="true"
+                  className="font-display text-4xl font-extrabold text-ink underline decoration-bolt decoration-4 underline-offset-8"
+                >
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <h3 className="mt-3 text-xl font-bold">{v.title}</h3>
