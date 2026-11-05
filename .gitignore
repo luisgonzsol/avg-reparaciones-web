@@ -45,5 +45,3 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 
-# vercel (enlace local del proyecto)
-.vercel

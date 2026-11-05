@@ -11,7 +11,10 @@ Requisitos completos en `PROMPT.md`, que es la fuente de verdad del encargo. Est
 - [x] **Fase 2** — Páginas informativas y formularios. Los formularios se validan en el servidor, pero el envío es **simulado**: no se guarda nada y el número de solicitud lleva la marca [SIMULACIÓN]. Las fotos se validan en el navegador y aún no se suben.
 - [x] **Fase 3** — Supabase (proyecto real conectado), tienda, carrito, checkout con reserva atómica, expiración con pg_cron, formularios guardando en la BD.
 - [x] **Fase 4** — Panel admin con MFA, auditoría, ajustes desde la BD, emails (Resend), Storage, rate limiting, Turnstile.
-- [x] **Fase 5** — SEO (sitemap, robots, OG, JSON-LD), accesibilidad (axe en E2E), Lighthouse ≥ 90 móvil, README y guía de Vercel. El despliegue real lo hace el usuario con `docs/despliegue-vercel.md`.
+- [x] **Fase 5** — SEO (sitemap, robots, OG, JSON-LD), accesibilidad (axe en E2E), Lighthouse ≥ 90 móvil, README y guía de Vercel.
+- [x] **Despliegue** — Publicada en **https://avg-reparaciones-web-app.vercel.app** (Vercel, proyecto `avg-reparaciones-web-app`, plan Hobby, región `dub1`, rama `main` de GitHub `luisgonzsol/avg-reparaciones-web`, privado). Cada `git push` a `main` publica solo. Site URL de Supabase ya apunta a esa URL.
+
+> **PROYECTO EN PAUSA (noviembre 2026)** hasta que la empresa defina sus necesidades. La web sigue publicada con **datos de ejemplo**: no está lista para abrirse al público. Ver «Pendientes» y «Al retomar» al final.
 
 Al cerrar cada fase: `npm run check` + `npm run build` + `npm audit`, commit, resumen al usuario y lista [PENDIENTE]. Luego se espera su confirmación.
 
@@ -165,3 +168,37 @@ node scripts/make-admin.mjs email owner   # dar acceso al panel
 node scripts/setup-services.mjs           # claves de Resend y Turnstile
 npm audit
 ```
+
+## Despliegue (Vercel)
+
+- Proyecto Vercel `avg-reparaciones-web-app` (cuenta `luisgonzsols-projects`), conectado a GitHub `luisgonzsol/avg-reparaciones-web` (rama `main`). `.vercel/` está enlazado en local e ignorado por git.
+- Variables en Vercel: las de Supabase (URL, publicable, secreta). **Nunca** `SUPABASE_DB_URL`. Resend y Turnstile aún no configurados (sin dominio). `NEXT_PUBLIC_SITE_URL` cae en `VERCEL_PROJECT_PRODUCTION_URL` si falta.
+- CLI: `npx -y vercel@65.11.0` (en Git Bash, `MSYS_NO_PATHCONV=1` para `vercel api /v9/...`).
+- Repositorio vacío sobrante en GitHub: `-avg-reparaciones-web` (puede borrarlo el usuario).
+
+## Reglas acordadas con el usuario
+
+- Nunca mostrar ni pegar claves/secretos en el chat; solo comprobar presencia y formato. El usuario crea cuentas y escribe contraseñas.
+- No arrancar el servidor ni abrir el navegador salvo que lo pida.
+- No borrar proyectos, datos ni hacer deploy sin su OK explícito. Antes de subir a GitHub, comprobar que no hay secretos versionados.
+- Respuestas cortas y pasos numerados y sencillos (no es experto en terminal).
+
+## Pendientes
+
+1. **Probar el panel publicado** (`/admin`, con MFA desde el móvil) y un pedido de prueba cancelado desde el panel.
+2. **Datos del negocio** en Panel → Ajustes: email (Gmail), segunda calle, duración de la garantía, costes de recogida y envío, métodos de pago. Coordenadas del local (`geo` del JSON-LD, en `src/config/site.ts`).
+3. **Inventario real:** productos (uno a uno o CSV) y tasa del día real.
+4. **Limpieza (solo con OK del usuario):** `delete from public.products where is_sample;`, borrar la tasa de ejemplo, pedidos/solicitudes de prueba y `delete from public.counters;`. Desde entonces, E2E solo contra un proyecto Supabase de pruebas aparte.
+5. **Antes de anunciar:** plan Pro de Vercel (Hobby no permite uso comercial), logo oficial (`public/brand/logo.svg` + `OFFICIAL_LOGO = true`), revisión legal de `/terminos` y `/privacidad`, desactivar «Allow new users to sign up» en Supabase (dejando el proveedor Email activo).
+6. **Dominio:** conectarlo en Vercel, actualizar `NEXT_PUBLIC_SITE_URL` + Site URL/Redirect URLs de Supabase, Turnstile con el dominio, Resend (verificar dominio + `node scripts/setup-services.mjs` y variables en Vercel), Google Search Console (sitemap) y Google Business Profile.
+
+**Datos [PENDIENTE]:** email, segunda calle, garantía, costes de recogida/envío, métodos de pago, coordenadas, logo oficial y flyers. No inventarlos.
+
+## Al retomar
+
+1. `git pull` y `npm.cmd install` (Node ≥ 20.9). Comprobar que `.env.local` sigue en la carpeta (no está en git).
+2. `npm.cmd run check` y `npm.cmd run build` para confirmar que todo sigue verde; `npm.cmd audit --omit=dev`.
+3. Si ha pasado tiempo, revisar actualizaciones de Next.js/Supabase (leer `node_modules/next/dist/docs/` antes de tocar APIs).
+4. Preguntar al usuario qué ha definido la empresa y qué datos [PENDIENTE] ya tiene; actualizar `siteConfig`/Ajustes.
+5. Seguir la lista «Pendientes» en orden. Ver `docs/despliegue-vercel.md` (checklist «Antes de abrir al público») y `docs/panel-y-servicios.md`.
+6. Comprobar que la web publicada responde y que el último deploy en Vercel está «Ready».
